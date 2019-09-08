@@ -24,8 +24,7 @@ function checkenv(){
 		else
 			apt-get update
 			apt-get -y install libpcap-dev
-			apt-get -y install iptables
-			apt-get install -y openjdk-7-jre			
+			apt-get -y install iptables			
 		fi
 }
 
