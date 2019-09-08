@@ -20,7 +20,6 @@ function checkenv(){
 			yum install epel-release -y
 			yum -y install libpcap
 			yum -y install iptables
-			yum install -y java
 		else
 			apt-get update
 			apt-get -y install libpcap-dev
