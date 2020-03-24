@@ -11,12 +11,6 @@
     <dependencies>
         <dependency>
             <groupId>org.pcap4j</groupId>
-            <artifactId>pcap4j</artifactId>
-            <version>1.8.2</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>org.pcap4j</groupId>
             <artifactId>pcap4j-core</artifactId>
             <version>1.8.2</version>
         </dependency>
@@ -48,6 +42,69 @@
                     <target>1.8</target>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>${profiles.mainClass}</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <artifactId> maven-assembly-plugin </artifactId>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>${profiles.mainClass}</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <!--不同环境Profile的唯一id-->
+            <id>server</id>
+            <properties>
+                <!--profiles.active是自定义的字段（名字随便起），自定义字段可以有多个-->
+                <profiles.mainClass>net.fs.server.FSServer</profiles.mainClass>
+            </properties>
+        </profile>
+        <profile>
+            <id>client</id>
+            <properties>
+                <profiles.mainClass>net.fs.client.FSClient</profiles.mainClass>
+            </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+    </profiles>
+
+    <repositories><!-- 代码库 -->
+        <repository>
+            <id>maven-ali</id>
+            <url>https://maven.aliyun.com/repository/public/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+        <repository>
+            <id>maven-apache</id>
+            <url>https://maven.aliyun.com/repository/apache-snapshots/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+    </repositories>
 </project>
