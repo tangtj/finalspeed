@@ -29,15 +29,12 @@ public class Route {
 
 	private DatagramSocket ds;
 	public HashMap<Integer, ConnectionUDP> connTable;
-	Route route;
 	Thread mainThread;
 	Thread reveiveThread;
 	
 	public AckListManage delayAckManage;
 
 	Object syn_ds2Table=new Object();
-
-	Object syn_tunTable=new Object();
 
 	Random ran=new Random();
 
@@ -52,23 +49,17 @@ public class Route {
 
 	HashSet<Integer> setedTable=new HashSet<Integer>();
 
-	static int vv;
-
 	HashSet<Integer> closedTable=new HashSet<Integer>();
 
 	public static int localDownloadSpeed,localUploadSpeed;
 
 	ClientManager clientManager;
 	
-	HashSet<Integer> pingTable=new HashSet<Integer>();
-	
 	public CapEnv capEnv=null;
 	
 	public ClientControl lastClientControl;
 	
 	public boolean useTcpTun=true;
-	
-	public HashMap<Object, Object> contentTable=new HashMap<Object, Object>();
 	
 	private static List<Trafficlistener> listenerList=new Vector<Trafficlistener>();
 	
@@ -92,7 +83,7 @@ public class Route {
 					capEnv.setListenPort(routePort);
 					capEnv.init();
 				} catch (Exception e) {
-					//e.printStackTrace();
+					e.printStackTrace();
 					throw e;
 				} 
 				d.setCapEnv(capEnv);
@@ -122,123 +113,117 @@ public class Route {
 			}
 		}
 		
-		connTable=new HashMap<Integer, ConnectionUDP>();
+		connTable= new HashMap<>();
 		clientManager=new ClientManager(this);
-		reveiveThread=new Thread(){
-			@Override
-			public void run(){
-				while(true){
-					byte[] b=new byte[1500];
-					DatagramPacket dp=new DatagramPacket(b,b.length);
+		reveiveThread= new Thread(() -> {
+			while(true){
+				byte[] b=new byte[1500];
+				DatagramPacket dp=new DatagramPacket(b,b.length);
+				try {
+					ds.receive(dp);
+					//MLog.println("接收 "+dp.getAddress());
+					packetBuffer.add(dp);
+				} catch (IOException e) {
+					e.printStackTrace();
 					try {
-						ds.receive(dp);
-						//MLog.println("接收 "+dp.getAddress());
-						packetBuffer.add(dp);
-					} catch (IOException e) {
-						e.printStackTrace();
-						try {
-							Thread.sleep(1);
-						} catch (InterruptedException e1) {
-							e1.printStackTrace();
-						}
-						continue;
-					}
-				}
-			}
-		};
-		reveiveThread.start();
-
-		mainThread=new Thread(){
-			public void run() {
-				while(true){
-					DatagramPacket dp=null;
-					try {
-						dp = packetBuffer.take();
+						Thread.sleep(1);
 					} catch (InterruptedException e1) {
 						e1.printStackTrace();
 					}
-					if(dp==null){
+				}
+			}
+		});
+		reveiveThread.start();
+
+		mainThread= new Thread(() -> {
+			while(true){
+				DatagramPacket dp=null;
+				try {
+					dp = packetBuffer.take();
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+				if(dp==null){
+					continue;
+				}
+				long t1=System.currentTimeMillis();
+				byte[] dpData=dp.getData();
+
+				int sType=0;
+				if(dp.getData().length<4){
+					return;
+				}
+				sType=MessageCheck.checkSType(dp);
+				//MLog.println("route receive MessageType111#"+sType+" "+dp.getAddress()+":"+dp.getPort());
+				if(dp!=null){
+
+					final int connectId=ByteIntConvert.toInt(dpData, 4);
+					int remote_clientId=ByteIntConvert.toInt(dpData, 8);
+
+					if(closedTable.contains(connectId)&&connectId!=0){
+						//#MLog.println("忽略已关闭连接包 "+connectId);
 						continue;
 					}
-					long t1=System.currentTimeMillis();
-					byte[] dpData=dp.getData();
-					
-					int sType=0;
-					if(dp.getData().length<4){
-						return;
-					}
-					sType=MessageCheck.checkSType(dp);
-					//MLog.println("route receive MessageType111#"+sType+" "+dp.getAddress()+":"+dp.getPort());
-					if(dp!=null){
-						
-						final int connectId=ByteIntConvert.toInt(dpData, 4);
-						int remote_clientId=ByteIntConvert.toInt(dpData, 8);
 
-						if(closedTable.contains(connectId)&&connectId!=0){
-							//#MLog.println("忽略已关闭连接包 "+connectId);
-							continue;
+					if(sType== MessageType.sType_PingMessage
+							||sType== MessageType.sType_PingMessage2){
+						ClientControl clientControl=null;
+						if(mode==RunMode.Server.code){
+							//发起
+							clientControl=clientManager.getClientControl(remote_clientId,dp.getAddress(),dp.getPort());
+						}else if(mode==RunMode.Client.code){
+							//接收
+							String key=dp.getAddress().getHostAddress()+":"+dp.getPort();
+							int sim_clientId=Math.abs(key.hashCode());
+							clientControl=clientManager.getClientControl(sim_clientId,dp.getAddress(),dp.getPort());
 						}
-						
-						if(sType==net.fs.rudp.message.MessageType.sType_PingMessage
-								||sType==net.fs.rudp.message.MessageType.sType_PingMessage2){
-							ClientControl clientControl=null;
-							if(mode==RunMode.Server.code){
-								//发起
-								clientControl=clientManager.getClientControl(remote_clientId,dp.getAddress(),dp.getPort());
-							}else if(mode==RunMode.Client.code){
-								//接收
+						clientControl.onReceivePacket(dp);
+					}else {
+						//发起
+						if(mode==RunMode.Client.code){
+							if(!setedTable.contains(remote_clientId)){
 								String key=dp.getAddress().getHostAddress()+":"+dp.getPort();
 								int sim_clientId=Math.abs(key.hashCode());
-								clientControl=clientManager.getClientControl(sim_clientId,dp.getAddress(),dp.getPort());
-							}
-							clientControl.onReceivePacket(dp);
-						}else {
-							//发起
-							if(mode==RunMode.Client.code){
-								if(!setedTable.contains(remote_clientId)){
-									String key=dp.getAddress().getHostAddress()+":"+dp.getPort();
-									int sim_clientId=Math.abs(key.hashCode());
-									ClientControl clientControl=clientManager.getClientControl(sim_clientId,dp.getAddress(),dp.getPort());
-									if(clientControl.getClientId_real()==-1){
-										clientControl.setClientId_real(remote_clientId);
-										//#MLog.println("首次设置clientId "+remote_clientId);
-									}else {
-										if(clientControl.getClientId_real()!=remote_clientId){
-											//#MLog.println("服务端重启更新clientId "+sType+" "+clientControl.getClientId_real()+" new: "+remote_clientId);
-											clientControl.updateClientId(remote_clientId);
-										}
+								ClientControl clientControl=clientManager.getClientControl(sim_clientId,dp.getAddress(),dp.getPort());
+								if(clientControl.getClientId_real()==-1){
+									clientControl.setClientId_real(remote_clientId);
+									//#MLog.println("首次设置clientId "+remote_clientId);
+								}else {
+									if(clientControl.getClientId_real()!=remote_clientId){
+										//#MLog.println("服务端重启更新clientId "+sType+" "+clientControl.getClientId_real()+" new: "+remote_clientId);
+										clientControl.updateClientId(remote_clientId);
 									}
-									//#MLog.println("cccccc "+sType+" "+remote_clientId);
-									setedTable.add(remote_clientId);
 								}
+								//#MLog.println("cccccc "+sType+" "+remote_clientId);
+								setedTable.add(remote_clientId);
 							}
-
-
-							//udp connection
-							if(mode==RunMode.Server.code){
-								//接收
-								try {
-									getConnection2(dp.getAddress(),dp.getPort(),connectId,remote_clientId);
-								} catch (Exception e) {
-									e.printStackTrace();
-								}
-							}
-							
-							final ConnectionUDP ds3=connTable.get(connectId);
-							if(ds3!=null){
-								final DatagramPacket dp2=dp;
-								ds3.receiver.onReceivePacket(dp2);
-								if(sType==MessageType.sType_DataMessage){
-									TrafficEvent event=new TrafficEvent("",ran.nextLong(),dp.getLength(),TrafficEvent.type_downloadTraffic);
-									fireEvent(event);
-								}
-							}
-
 						}
+
+
+						//udp connection
+						if(mode==RunMode.Server.code){
+							//接收
+							try {
+								getConnection2(dp.getAddress(),dp.getPort(),connectId,remote_clientId);
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+						}
+
+						final ConnectionUDP ds3=connTable.get(connectId);
+						if(ds3!=null){
+							final DatagramPacket dp2=dp;
+							ds3.receiver.onReceivePacket(dp2);
+							if(sType==MessageType.sType_DataMessage){
+								TrafficEvent event=new TrafficEvent("",ran.nextLong(),dp.getLength(),TrafficEvent.type_downloadTraffic);
+								fireEvent(event);
+							}
+						}
+
 					}
 				}
 			}
-		};
+		});
 		mainThread.start();
 		
 	}
@@ -267,11 +252,7 @@ public class Route {
 		try {
 			Class onwClass = Class.forName(pocessName);
 			o = (ConnectionProcessor) onwClass.newInstance();
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (InstantiationException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
 		return o;
