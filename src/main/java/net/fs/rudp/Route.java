@@ -2,6 +2,11 @@
 
 package net.fs.rudp;
 
+import net.fs.cap.CapEnv;
+import net.fs.cap.VDatagramSocket;
+import net.fs.rudp.message.MessageType;
+import net.fs.utils.*;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -9,17 +14,8 @@ import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import net.fs.cap.CapEnv;
-import net.fs.cap.VDatagramSocket;
-import net.fs.rudp.message.MessageType;
-import net.fs.utils.*;
 
 
 public class Route {
