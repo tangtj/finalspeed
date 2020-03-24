@@ -14,6 +14,7 @@ import net.fs.rudp.message.PingMessage2;
 import net.fs.utils.ByteIntConvert;
 import net.fs.utils.MLog;
 import net.fs.utils.MessageCheck;
+import net.fs.utils.ThreadUtils;
 
 public class ClientControl {
 	
@@ -145,13 +146,9 @@ public class ClientControl {
 			while(it.hasNext()){
 				final ConnectionUDP conn=connTable.get(it.next());
 				if(conn!=null){
-					Route.es.execute(new Runnable() {
-						
-						@Override
-						public void run() {
-							conn.stopnow=true;
-							conn.destroy(true);
-						}
+					ThreadUtils.execute(() -> {
+						conn.stopnow=true;
+						conn.destroy(true);
 					});
 				
 				}

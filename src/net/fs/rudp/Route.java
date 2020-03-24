@@ -31,8 +31,6 @@ public class Route {
 	Route route;
 	Thread mainThread;
 	Thread reveiveThread;
-
-	public static ThreadPoolExecutor es;
 	
 	public AckListManage delayAckManage;
 
@@ -79,12 +77,6 @@ public class Route {
 	{
 		
 		delayAckManage = new AckListManage();
-	}
-	
-	static{
-		SynchronousQueue queue = new SynchronousQueue();
-		ThreadPoolExecutor executor = new ThreadPoolExecutor(100, Integer.MAX_VALUE, 10*1000, TimeUnit.MILLISECONDS, queue); 
-		es=executor;
 	}
 	
 	public Route(String pocessName,short routePort,int mode2,boolean tcp,boolean tcpEnvSuccess) throws Exception{

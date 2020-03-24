@@ -16,6 +16,9 @@ import java.net.BindException;
 import net.fs.rudp.ConnectionProcessor;
 import net.fs.rudp.Route;
 import net.fs.utils.MLog;
+import net.fs.utils.SystemType;
+import net.fs.utils.SystemUtils;
+import net.fs.utils.ThreadUtils;
 
 public class FSServer {
 
@@ -28,6 +31,8 @@ public class FSServer {
 	static FSServer udpServer;
 
 	String systemName = System.getProperty("os.name").toLowerCase();
+
+	private final SystemType systemType;
 	
 	boolean success_firewall_windows=true;
 
@@ -51,41 +56,38 @@ public class FSServer {
 	public FSServer() throws Exception {
 		MLog.info("");
 		MLog.info("FinalSpeed server starting... ");
-		MLog.info("System Name: " + systemName);
 		udpServer = this;
+		systemType = SystemUtils.getSystem(systemName);
+		MLog.info("System Name: " + systemType);
 		final MapTunnelProcessor mp = new MapTunnelProcessor();
 
 		String port_s = readFileData("./cnf/listen_port");
-		if (port_s != null && !port_s.trim().equals("")) {
+		if (port_s != null && !"".equals(port_s.trim())) {
 			port_s = port_s.replaceAll("\n", "").replaceAll("\r", "");
 			routePort = Integer.parseInt(port_s);
 		}
 		route_udp = new Route(mp.getClass().getName(), (short) routePort, Route.mode_server, false,true);
-		if (systemName.equals("linux")) {
+		if (systemType == SystemType.Linux) {
 			startFirewall_linux();
 			setFireWall_linux_udp();
-		}else if(systemName.contains("windows")){
+		}else if(systemType == SystemType.Windows){
 			startFirewall_windows();
 		}
 
-		Route.es.execute(new Runnable() {
-
-			@Override
-			public void run() {
-				try {
-					route_tcp = new Route(mp.getClass().getName(), (short) routePort, Route.mode_server, true,true);
-					if (systemName.equals("linux")) {
-						setFireWall_linux_tcp();
-					}else if(systemName.contains("windows")){
-						if(success_firewall_windows){
-							setFireWall_windows_tcp();
-						}else{
-							System.out.println("启动windows防火墙失败,请先运行防火墙服务.");
-						}
+		ThreadUtils.execute(() -> {
+			try {
+				route_tcp = new Route(mp.getClass().getName(), (short) routePort, Route.mode_server, true,true);
+				if (systemType == SystemType.Linux) {
+					setFireWall_linux_tcp();
+				}else if(systemType == SystemType.Windows){
+					if(success_firewall_windows){
+						setFireWall_windows_tcp();
+					}else{
+						System.out.println("启动windows防火墙失败,请先运行防火墙服务.");
 					}
-				} catch (Exception e) {
-					// e.printStackTrace();
 				}
+			} catch (Exception e) {
+				// e.printStackTrace();
 			}
 		});
 

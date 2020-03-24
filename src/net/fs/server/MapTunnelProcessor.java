@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 import net.fs.client.Pipe;
 import net.fs.rudp.ConnectionProcessor;
@@ -17,6 +18,7 @@ import net.fs.rudp.UDPOutputStream;
 import net.fs.utils.MLog;
 
 import com.alibaba.fastjson.JSONObject;
+import net.fs.utils.ThreadUtils;
 
 
 public class MapTunnelProcessor implements ConnectionProcessor{
@@ -41,11 +43,7 @@ public class MapTunnelProcessor implements ConnectionProcessor{
 	public void process(final ConnectionUDP conn){
 		this.conn=conn;
 		pc=this;
-		Route.es.execute(new Runnable(){
-			public void run(){
-				process();
-			}
-		});
+		ThreadUtils.execute(() -> process());
 	}
 
 
@@ -57,7 +55,7 @@ public class MapTunnelProcessor implements ConnectionProcessor{
 		byte[] headData;
 		try {
 			headData = tis.read2();
-			String hs=new String(headData,"utf-8");
+			String hs=new String(headData, StandardCharsets.UTF_8);
 			JSONObject requestJSon=JSONObject.parseObject(hs);
 			final int dstPort=requestJSon.getIntValue("dst_port");
 			String message="";
@@ -66,7 +64,7 @@ public class MapTunnelProcessor implements ConnectionProcessor{
 			code=Constant.code_success;
 			responeJSon.put("code", code);
 			responeJSon.put("message", message);
-			byte[] responeData=responeJSon.toJSONString().getBytes("utf-8");
+			byte[] responeData=responeJSon.toJSONString().getBytes(StandardCharsets.UTF_8);
 			tos.write(responeData, 0, responeData.length);
 			if(code!=Constant.code_success){
 				close();
@@ -80,32 +78,25 @@ public class MapTunnelProcessor implements ConnectionProcessor{
 			final Pipe p1=new Pipe();
 			final Pipe p2=new Pipe();
 
-			Route.es.execute(new Runnable() {
-
-				public void run() {
-					try {
-						p1.pipe(sis, tos,100*1024,p2);
-					}catch (Exception e) {
-						//e.printStackTrace();
-					}finally{
-						close();
-						if(p1.getReadedLength()==0){
-							MLog.println("端口"+dstPort+"无返回数据");
-						}
+			ThreadUtils.execute(() -> {
+				try {
+					p1.pipe(sis, tos,100*1024,p2);
+				}catch (Exception e) {
+					//e.printStackTrace();
+				}finally{
+					close();
+					if(p1.getReadedLength()==0){
+						MLog.println("端口"+dstPort+"无返回数据");
 					}
 				}
-
 			});
-			Route.es.execute(new Runnable() {
-
-				public void run() {
-					try {
-						p2.pipe(tis,sos,100*1024*1024,conn);
-					}catch (Exception e) {
-						//e.printStackTrace();
-					}finally{
-						close();
-					}
+			ThreadUtils.execute(() -> {
+				try {
+					p2.pipe(tis,sos,100*1024*1024,conn);
+				}catch (Exception e) {
+					//e.printStackTrace();
+				}finally{
+					close();
 				}
 			});
 

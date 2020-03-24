@@ -2,6 +2,8 @@
 
 package net.fs.rudp;
 
+import net.fs.utils.ThreadUtils;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -111,7 +113,7 @@ public class StreamPipe {
 				}
 			}
 		};
-		Route.es.execute(thread);
+		ThreadUtils.execute(thread);
 	}
 	
 	void close(){
@@ -124,16 +126,12 @@ public class StreamPipe {
 			}
 
 			if(socketA!=null){
-				Route.es.execute(new Runnable() {
-					
-					public void run() {
-						try {
-							socketA.close();
-						} catch (IOException e) {
-							//e.printStackTrace();
-						}
+				ThreadUtils.execute(() -> {
+					try {
+						socketA.close();
+					} catch (IOException e) {
+						//e.printStackTrace();
 					}
-					
 				});
 			
 			}
@@ -141,14 +139,11 @@ public class StreamPipe {
 			
 			if(socketB!=null){
 
-				Route.es.execute(new Runnable() {
-					
-					public void run() {
-						try {
-							socketB.close();
-						} catch (IOException e) {
-							//e.printStackTrace();
-						}
+				ThreadUtils.execute(() -> {
+					try {
+						socketB.close();
+					} catch (IOException e) {
+						//e.printStackTrace();
 					}
 				});
 				

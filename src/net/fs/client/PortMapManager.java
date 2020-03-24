@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -18,6 +19,7 @@ import com.alibaba.fastjson.JSONObject;
 
 import net.fs.rudp.Route;
 import net.fs.utils.MLog;
+import net.fs.utils.ThreadUtils;
 
 public class PortMapManager {
 	
@@ -185,37 +187,28 @@ public class PortMapManager {
 	}
 
 	void listen(final ServerSocket serverSocket){
-		Route.es.execute(new Runnable() {
-
-			@Override
-			public void run() {
-				while(true){
-					try {
-						final Socket socket=serverSocket.accept();
-						Route.es.execute(new Runnable() {
-							
-							@Override
-							public void run() {
-								int listenPort=serverSocket.getLocalPort();
-								MapRule mapRule=mapRuleTable.get(listenPort);
-								if(mapRule!=null){
-									Route route=null;
-									if(mapClient.isUseTcp()){
-										route=mapClient.route_tcp;
-									}else {
-										route=mapClient.route_udp;
-									}
-									PortMapProcess process=new PortMapProcess(mapClient,route, socket,mapClient.serverAddress,mapClient.serverPort,null, 
-											null,mapRule.dst_port);
-								}
+		ThreadUtils.execute(() -> {
+			while(true){
+				try {
+					final Socket socket=serverSocket.accept();
+					ThreadUtils.execute(() -> {
+						int listenPort=serverSocket.getLocalPort();
+						MapRule mapRule=mapRuleTable.get(listenPort);
+						if(mapRule!=null){
+							Route route=null;
+							if(mapClient.isUseTcp()){
+								route=mapClient.route_tcp;
+							}else {
+								route=mapClient.route_udp;
 							}
-							
-						});
+							PortMapProcess process=new PortMapProcess(mapClient,route, socket,mapClient.serverAddress,mapClient.serverPort,null,
+									null,mapRule.dst_port);
+						}
+					});
 
-					} catch (IOException e) {
-						e.printStackTrace();
-						break;
-					}
+				} catch (IOException e) {
+					e.printStackTrace();
+					break;
 				}
 			}
 		});
@@ -248,7 +241,7 @@ public class PortMapManager {
 			fis=new FileInputStream(file);
 			dis=new DataInputStream(fis);
 			dis.readFully(data);
-			str=new String(data,"utf-8");
+			str=new String(data, StandardCharsets.UTF_8);
 
 		} catch (Exception e) {
 			//e.printStackTrace();

@@ -17,6 +17,7 @@ import net.fs.rudp.UDPOutputStream;
 import net.fs.utils.MLog;
 
 import com.alibaba.fastjson.JSONObject;
+import net.fs.utils.ThreadUtils;
 
 public class PortMapProcess implements ClientProcessorInterface{
 
@@ -78,42 +79,32 @@ public class PortMapProcess implements ClientProcessorInterface{
 			String uimessage="";
 			if(code==Constant.code_success){
 
-				Route.es.execute(new Runnable() {
-
-					@Override
-					public void run() {
-						long t=System.currentTimeMillis();
-						p2.setDstPort(dstPort);
-						try {
-							p2.pipe(tis, srcOs,1024*1024*1024,null);
-						}catch (Exception e) {
-							e.printStackTrace();
-						}finally{
-							close();
-							if(p2.getReadedLength()==0){
-								//String msg="fs服务连接成功,加速端口"+dstPort+"连接失败1";
-								String msg="端口"+dstPort+"无返回数据";
-								MLog.println(msg);
-								ClientUI.ui.setMessage(msg);
-							}
+				ThreadUtils.execute(() -> {
+					long t=System.currentTimeMillis();
+					p2.setDstPort(dstPort);
+					try {
+						p2.pipe(tis, srcOs,1024*1024*1024,null);
+					}catch (Exception e) {
+						e.printStackTrace();
+					}finally{
+						close();
+						if(p2.getReadedLength()==0){
+							//String msg="fs服务连接成功,加速端口"+dstPort+"连接失败1";
+							String msg="端口"+dstPort+"无返回数据";
+							MLog.println(msg);
+							ClientUI.ui.setMessage(msg);
 						}
 					}
-
 				});
 
-				Route.es.execute(new Runnable() {
-
-					@Override
-					public void run() {
-						try {
-							p1.pipe(srcIs, tos,200*1024,p2);
-						} catch (Exception e) {
-							//e.printStackTrace();
-						}finally{
-							close();
-						}
+				ThreadUtils.execute(() -> {
+					try {
+						p1.pipe(srcIs, tos,200*1024,p2);
+					} catch (Exception e) {
+						//e.printStackTrace();
+					}finally{
+						close();
 					}
-
 				});
 				success=true;
 				uimessage=("fs服务连接成功");

@@ -64,7 +64,7 @@ public class VDatagramSocket extends DatagramSocket{
 			}
 		}else{
 			
-			throw new IOException("隧道不存在! "+" thread "+Route.es.getActiveCount()+" "+p.getAddress()+":"+p.getPort());
+			throw new IOException("隧道不存在! "+" "+p.getAddress()+":"+p.getPort());
 		}
 	}
 	

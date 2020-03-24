@@ -20,6 +20,7 @@ import net.fs.rudp.Route;
 import net.fs.utils.ByteShortConvert;
 import net.fs.utils.MLog;
 
+import net.fs.utils.ThreadUtils;
 import org.pcap4j.core.NotOpenException;
 import org.pcap4j.core.PacketListener;
 import org.pcap4j.core.PcapHandle;
@@ -484,18 +485,12 @@ public class CapEnv {
 		testIp_tcp=address.getHostAddress();
 		for(int i=0;i<5;i++){
 			try {
-				Route.es.execute(new Runnable() {
-					
-					@Override
-					public void run() {
-						try {
-							Socket socket=new Socket(testIp_tcp,por);
-							socket.close();
-						} catch (UnknownHostException e) {
-							e.printStackTrace();
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
+				ThreadUtils.execute(() -> {
+					try {
+						Socket socket=new Socket(testIp_tcp,por);
+						socket.close();
+					} catch (IOException e) {
+						e.printStackTrace();
 					}
 				});
 				Thread.sleep(500);

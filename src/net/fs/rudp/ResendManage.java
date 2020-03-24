@@ -2,6 +2,8 @@
 
 package net.fs.rudp;
 
+import net.fs.utils.ThreadUtils;
+
 import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -18,7 +20,7 @@ public class ResendManage implements Runnable{
 	LinkedBlockingQueue<ResendItem> taskList=new LinkedBlockingQueue<ResendItem>();
 	
 	public ResendManage(){
-		Route.es.execute(this);
+		ThreadUtils.execute(this);
 	}
 	
 	public void addTask(final ConnectionUDP conn,final int sequence){

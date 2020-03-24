@@ -55,6 +55,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 
+import net.fs.utils.ThreadUtils;
 import org.pcap4j.core.Pcaps;
 
 import net.fs.rudp.Route;
@@ -666,13 +667,7 @@ public class ClientUI implements ClientUII, WindowListener {
         mapClient.setMapServer(config.getServerAddress(), config.getServerPort(), config.getRemotePort(), null, null, config.isDirect_cn(), config.getProtocal().equals("tcp"),
                 null);
 
-        Route.es.execute(new Runnable() {
-
-            @Override
-            public void run() {
-                checkUpdate();
-            }
-        });
+        ThreadUtils.execute(() -> checkUpdate());
 
         setSpeed(config.getDownloadSpeed(), config.getUploadSpeed());
         if (isVisible&!min) {
