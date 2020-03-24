@@ -19,10 +19,7 @@ import java.util.concurrent.TimeUnit;
 import net.fs.cap.CapEnv;
 import net.fs.cap.VDatagramSocket;
 import net.fs.rudp.message.MessageType;
-import net.fs.utils.ByteIntConvert;
-import net.fs.utils.MLog;
-import net.fs.utils.MessageCheck;
-import net.fs.utils.RunMode;
+import net.fs.utils.*;
 
 
 public class Route {
@@ -36,9 +33,7 @@ public class Route {
 
 	Object syn_ds2Table=new Object();
 
-	Random ran=new Random();
-
-	public int localclientId=Math.abs(ran.nextInt());
+	public int localclientId=Math.abs(RandomUtils.randomInt());
 
 	LinkedBlockingQueue<DatagramPacket> packetBuffer=new LinkedBlockingQueue<DatagramPacket>();
 
@@ -215,7 +210,7 @@ public class Route {
 							final DatagramPacket dp2=dp;
 							ds3.receiver.onReceivePacket(dp2);
 							if(sType==MessageType.sType_DataMessage){
-								TrafficEvent event=new TrafficEvent("",ran.nextLong(),dp.getLength(),TrafficEvent.type_downloadTraffic);
+								TrafficEvent event=new TrafficEvent("",RandomUtils.randomLong(),dp.getLength(),TrafficEvent.type_downloadTraffic);
 								fireEvent(event);
 							}
 						}
@@ -282,7 +277,7 @@ public class Route {
 	//发起连接
 	public ConnectionUDP getConnection(String address,int dstPort,String password) throws Exception{
 		InetAddress dstIp=InetAddress.getByName(address);
-		int connectId=Math.abs(ran.nextInt());
+		int connectId=Math.abs(RandomUtils.randomInt());
 		String key=dstIp.getHostAddress()+":"+dstPort;
 		int remote_clientId=Math.abs(key.hashCode());
 		ClientControl clientControl=clientManager.getClientControl(remote_clientId,dstIp,dstPort);
