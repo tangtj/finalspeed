@@ -11,10 +11,7 @@ import java.util.Random;
 
 import net.fs.rudp.message.PingMessage;
 import net.fs.rudp.message.PingMessage2;
-import net.fs.utils.ByteIntConvert;
-import net.fs.utils.MLog;
-import net.fs.utils.MessageCheck;
-import net.fs.utils.ThreadUtils;
+import net.fs.utils.*;
 
 public class ClientControl {
 	
@@ -201,7 +198,7 @@ public class ClientControl {
 	}
 	
 	public void onReceivePing(PingMessage pm){
-		if(route.mode==2){
+		if(route.mode==RunMode.Server.code){
 			currentSpeed=pm.getDownloadSpeed()*1024;
 			//#MLog.println("更新对方速度: "+currentSpeed);
 		}
@@ -236,7 +233,7 @@ public class ClientControl {
 	
 	//纳秒
 	public synchronized void sendSleep(long startTime,int length){
-		if(route.mode==1){
+		if(route.mode== RunMode.Client.code){
 			currentSpeed=Route.localUploadSpeed;
 		}
 		if(sended==0){

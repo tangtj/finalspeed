@@ -15,10 +15,7 @@ import java.net.BindException;
 
 import net.fs.rudp.ConnectionProcessor;
 import net.fs.rudp.Route;
-import net.fs.utils.MLog;
-import net.fs.utils.SystemType;
-import net.fs.utils.SystemUtils;
-import net.fs.utils.ThreadUtils;
+import net.fs.utils.*;
 
 public class FSServer {
 
@@ -66,7 +63,7 @@ public class FSServer {
 			port_s = port_s.replaceAll("\n", "").replaceAll("\r", "");
 			routePort = Integer.parseInt(port_s);
 		}
-		route_udp = new Route(mp.getClass().getName(), (short) routePort, Route.mode_server, false,true);
+		route_udp = new Route(mp.getClass().getName(), (short) routePort, RunMode.Server, false,true);
 		if (systemType == SystemType.Linux) {
 			startFirewall_linux();
 			setFireWall_linux_udp();
@@ -76,7 +73,7 @@ public class FSServer {
 
 		ThreadUtils.execute(() -> {
 			try {
-				route_tcp = new Route(mp.getClass().getName(), (short) routePort, Route.mode_server, true,true);
+				route_tcp = new Route(mp.getClass().getName(), (short) routePort, RunMode.Server, true,true);
 				if (systemType == SystemType.Linux) {
 					setFireWall_linux_tcp();
 				}else if(systemType == SystemType.Windows){
