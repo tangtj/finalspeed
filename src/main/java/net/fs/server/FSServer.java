@@ -4,41 +4,35 @@
 
 package net.fs.server;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.BindException;
-
-import net.fs.rudp.ConnectionProcessor;
 import net.fs.rudp.Route;
 import net.fs.utils.*;
 
+import java.io.*;
+import java.net.BindException;
+import java.nio.charset.StandardCharsets;
+
 public class FSServer {
 
-	ConnectionProcessor imTunnelProcessor;
+	private Route routeUdp;
 
-	Route route_udp, route_tcp, route;
+	private Route routeTcp;
 
-	int routePort = 150;
+	private int defaultRoutePort = 150;
 
 	static FSServer udpServer;
 
 	String systemName = System.getProperty("os.name").toLowerCase();
 
 	private final SystemType systemType;
-	
-	boolean success_firewall_windows=true;
+
+	private boolean successFirewallWindows = true;
 
 	public static void main(String[] args) {
 		try {
 			FSServer fs = new FSServer();
 		} catch (Exception e) {
 			e.printStackTrace();
-			if(e instanceof BindException){
+			if (e instanceof BindException) {
 				MLog.println("Udp port already in use.");
 			}
 			MLog.println("Start failed.");
@@ -61,25 +55,25 @@ public class FSServer {
 		String port_s = readFileData("./cnf/listen_port");
 		if (port_s != null && !"".equals(port_s.trim())) {
 			port_s = port_s.replaceAll("\n", "").replaceAll("\r", "");
-			routePort = Integer.parseInt(port_s);
+			defaultRoutePort = Integer.parseInt(port_s);
 		}
-		route_udp = new Route(mp.getClass().getName(), (short) routePort, RunMode.Server, false,true);
+		routeUdp = new Route(mp.getClass().getName(), (short) defaultRoutePort, RunMode.Server, false, true);
 		if (systemType == SystemType.Linux) {
 			startFirewall_linux();
 			setFireWall_linux_udp();
-		}else if(systemType == SystemType.Windows){
+		} else if (systemType == SystemType.Windows) {
 			startFirewall_windows();
 		}
 
 		ThreadUtils.execute(() -> {
 			try {
-				route_tcp = new Route(mp.getClass().getName(), (short) routePort, RunMode.Server, true,true);
+				routeTcp = new Route(mp.getClass().getName(), (short) defaultRoutePort, RunMode.Server, true, true);
 				if (systemType == SystemType.Linux) {
 					setFireWall_linux_tcp();
-				}else if(systemType == SystemType.Windows){
-					if(success_firewall_windows){
+				} else if (systemType == SystemType.Windows) {
+					if (successFirewallWindows) {
 						setFireWall_windows_tcp();
-					}else{
+					} else {
 						System.out.println("启动windows防火墙失败,请先运行防火墙服务.");
 					}
 				}
@@ -96,57 +90,38 @@ public class FSServer {
 		Thread standReadThread=null;
 		Thread errorReadThread=null;
 		try {
-			final Process p = Runtime.getRuntime().exec(runFirewall,null);
-			standReadThread=new Thread(){
-				public void run(){
-					InputStream is=p.getInputStream();
-					BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(is));
-					while (true){
-						String line; 
-						try {
-							line = localBufferedReader.readLine();
-							if (line == null){ 
-								break;
-							}else{ 
-								if(line.contains("Windows")){
-									success_firewall_windows=false;
-								}
-							}
-						} catch (IOException e) {
-							e.printStackTrace();
-							//error();
+			final Process p = Runtime.getRuntime().exec(runFirewall, null);
+			standReadThread = new Thread(() -> {
+				InputStream is = p.getInputStream();
+				BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(is));
+				while (true) {
+					String line;
+					try {
+						line = localBufferedReader.readLine();
+						if (line == null) {
 							break;
+						} else {
+							if (line.contains("Windows")) {
+								successFirewallWindows = false;
+							}
 						}
+					} catch (IOException e) {
+						e.printStackTrace();
+						//error();
+						break;
 					}
 				}
-			};
+			});
 			standReadThread.start();
-			
-			errorReadThread=new Thread(){
-				public void run(){
-					InputStream is=p.getErrorStream();
-					BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(is));
-					while (true){
-						String line; 
-						try {
-							line = localBufferedReader.readLine();
-							if (line == null){ 
-								break;
-							}else{ 
-								System.out.println("error"+line);
-							}
-						} catch (IOException e) {
-							e.printStackTrace();
-							//error();
-							break;
-						}
-					}
-				}
-			};
+
+			errorReadThread = new Thread(() -> {
+				InputStream is = p.getErrorStream();
+				readSkipStream(is);
+			});
 			errorReadThread.start();
 		} catch (IOException e) {
 			e.printStackTrace();
-			success_firewall_windows=false;
+			successFirewallWindows = false;
 			//error();
 		}
 		
@@ -170,16 +145,16 @@ public class FSServer {
 	void setFireWall_windows_tcp() {
 		cleanRule_windows();
 		try {
-			if(systemName.contains("xp")||systemName.contains("2003")){
-				String cmd_add1="ipseccmd -w REG -p \"tcptun_fs_server\" -r \"Block TCP/"+routePort+"\" -f *+0:"+routePort+":TCP "+" -n BLOCK -x ";
-				final Process p2 = Runtime.getRuntime().exec(cmd_add1,null);
+			if(systemName.contains("xp")||systemName.contains("2003")) {
+				String cmd_add1 = "ipseccmd -w REG -p \"tcptun_fs_server\" -r \"Block TCP/" + defaultRoutePort + "\" -f *+0:" + defaultRoutePort + ":TCP " + " -n BLOCK -x ";
+				final Process p2 = Runtime.getRuntime().exec(cmd_add1, null);
 				p2.waitFor();
 			}else {
-				String cmd_add1="netsh advfirewall firewall add rule name=tcptun_fs_server protocol=TCP dir=out localport="+routePort+" action=block ";
-				final Process p2 = Runtime.getRuntime().exec(cmd_add1,null);
+				String cmd_add1 = "netsh advfirewall firewall add rule name=tcptun_fs_server protocol=TCP dir=out localport=" + defaultRoutePort + " action=block ";
+				final Process p2 = Runtime.getRuntime().exec(cmd_add1, null);
 				p2.waitFor();
-				String cmd_add2="netsh advfirewall firewall add rule name=tcptun_fs_server protocol=TCP dir=in localport="+routePort+" action=block ";
-				Process p3 = Runtime.getRuntime().exec(cmd_add2,null);
+				String cmd_add2 = "netsh advfirewall firewall add rule name=tcptun_fs_server protocol=TCP dir=in localport=" + defaultRoutePort + " action=block ";
+				Process p3 = Runtime.getRuntime().exec(cmd_add2, null);
 				p3.waitFor();
 			}
 		} catch (Exception e1) {
@@ -212,7 +187,7 @@ public class FSServer {
 
 	void setFireWall_linux_udp() {
 		cleanUdpTunRule();
-		String cmd2 = "iptables -I INPUT -p udp --dport " + routePort + " -j ACCEPT"
+		String cmd2 = "iptables -I INPUT -p udp --dport " + defaultRoutePort + " -j ACCEPT"
 				+ " -m comment --comment udptun_fs_server";
 		runCommand(cmd2);
 	}
@@ -232,7 +207,7 @@ public class FSServer {
 
 	void setFireWall_linux_tcp() {
 		cleanTcpTunRule();
-		String cmd2 = "iptables -I INPUT -p tcp --dport " + routePort + " -j DROP"
+		String cmd2 = "iptables -I INPUT -p tcp --dport " + defaultRoutePort + " -j DROP"
 				+ " -m comment --comment tcptun_fs_server ";
 		runCommand(cmd2);
 
@@ -255,31 +230,13 @@ public class FSServer {
 		int row_delect = -1;
 		String cme_list_rule = "iptables -L -n --line-number";
 		// String [] cmd={"netsh","advfirewall set allprofiles state on"};
-		Thread errorReadThread = null;
 		try {
 			final Process p = Runtime.getRuntime().exec(cme_list_rule, null);
 
-			errorReadThread = new Thread() {
-				public void run() {
-					InputStream is = p.getErrorStream();
-					BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(is));
-					while (true) {
-						String line;
-						try {
-							line = localBufferedReader.readLine();
-							if (line == null) {
-								break;
-							} else {
-								// System.out.println("erroraaa "+line);
-							}
-						} catch (IOException e) {
-							e.printStackTrace();
-							// error();
-							break;
-						}
-					}
-				}
-			};
+			Thread errorReadThread = new Thread(() -> {
+				InputStream is = p.getErrorStream();
+				readSkipStream(is);
+			});
 			errorReadThread.start();
 
 			InputStream is = p.getInputStream();
@@ -302,7 +259,7 @@ public class FSServer {
 										// "+line);
 										row_delect = Integer.parseInt(n);
 									}
-								} catch (Exception e) {
+								} catch (Exception ignored) {
 
 								}
 							}
@@ -329,48 +286,16 @@ public class FSServer {
 		Thread errorReadThread = null;
 		try {
 			final Process p = Runtime.getRuntime().exec(command, null);
-			standReadThread = new Thread() {
-				public void run() {
-					InputStream is = p.getInputStream();
-					BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(is));
-					while (true) {
-						String line;
-						try {
-							line = localBufferedReader.readLine();
-							// System.out.println("stand "+line);
-							if (line == null) {
-								break;
-							}
-						} catch (IOException e) {
-							e.printStackTrace();
-							break;
-						}
-					}
-				}
-			};
+			standReadThread = new Thread(() -> {
+				InputStream is = p.getInputStream();
+				readSkipStream(is);
+			});
 			standReadThread.start();
 
-			errorReadThread = new Thread() {
-				public void run() {
-					InputStream is = p.getErrorStream();
-					BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(is));
-					while (true) {
-						String line;
-						try {
-							line = localBufferedReader.readLine();
-							if (line == null) {
-								break;
-							} else {
-								// System.out.println("error "+line);
-							}
-						} catch (IOException e) {
-							e.printStackTrace();
-							// error();
-							break;
-						}
-					}
-				}
-			};
+			errorReadThread = new Thread(() -> {
+				InputStream is = p.getErrorStream();
+				readSkipStream(is);
+			});
 			errorReadThread.start();
 			standReadThread.join();
 			errorReadThread.join();
@@ -378,6 +303,28 @@ public class FSServer {
 		} catch (Exception e) {
 			e.printStackTrace();
 			// error();
+		}
+	}
+
+	private void readSkipStream(InputStream is) {
+		if (is == null) {
+			return;
+		}
+		BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(is));
+		while (true) {
+			String line;
+			try {
+				line = localBufferedReader.readLine();
+				// System.out.println("stand "+line);
+				if (line == null) {
+					break;
+				} else {
+					// System.out.println("error "+line);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+				break;
+			}
 		}
 	}
 
@@ -391,7 +338,7 @@ public class FSServer {
 			dis = new DataInputStream(fis);
 			byte[] data = new byte[(int) file.length()];
 			dis.readFully(data);
-			content = new String(data, "utf-8");
+			content = new String(data, StandardCharsets.UTF_8);
 		} catch (Exception e) {
 			// e.printStackTrace();
 		} finally {
@@ -406,8 +353,8 @@ public class FSServer {
 		return content;
 	}
 
-	public int getRoutePort() {
-		return routePort;
+	public int getDefaultRoutePort() {
+		return defaultRoutePort;
 	}
 
 }
