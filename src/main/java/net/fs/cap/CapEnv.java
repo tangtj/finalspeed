@@ -2,31 +2,20 @@
 
 package net.fs.cap;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import net.fs.rudp.NetworkInfo;
 import net.fs.rudp.NetworkInterfaceOperate;
 import net.fs.utils.ByteShortConvert;
 import net.fs.utils.MLog;
 
-import net.fs.utils.ThreadUtils;
-import org.pcap4j.core.NotOpenException;
+import net.fs.utils.TimerExecutor;
 import org.pcap4j.core.PacketListener;
 import org.pcap4j.core.PcapHandle;
-import org.pcap4j.core.PcapNativeException;
 import org.pcap4j.core.PcapNetworkInterface;
 import org.pcap4j.core.PcapNetworkInterface.PromiscuousMode;
 import org.pcap4j.core.PcapStat;
-import org.pcap4j.core.Pcaps;
 import org.pcap4j.core.BpfProgram.BpfCompileMode;
 import org.pcap4j.packet.EthernetPacket;
 import org.pcap4j.packet.EthernetPacket.EthernetHeader;
@@ -99,43 +88,10 @@ public class CapEnv {
 		this.fwSuccess=fwSuccess;
 		tcpManager=new TunManager(this);
 	}
-
 	public void init() throws Exception{
 		initInterface();
-		
-		Thread systemSleepScanThread= new Thread(() -> {
-			long t=System.currentTimeMillis();
-			while(true){
-				if(System.currentTimeMillis()-t>5*1000){
-					for(int i=0;i<10;i++){
-						MLog.info("休眠恢复... "+(i+1));
-						try {
-							boolean success=initInterface();
-							if(success){
-								MLog.info("休眠恢复成功 "+(i+1));
-								break;
-							}
-						} catch (Exception e1) {
-							e1.printStackTrace();
-						}
 
-						try {
-							Thread.sleep(5*1000);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-					}
-
-				}
-				t=System.currentTimeMillis();
-				try {
-					Thread.sleep(1*1000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-		});
-		systemSleepScanThread.start();
+		TimerExecutor.submitTimerTask(new CheckThread(this),5, TimeUnit.SECONDS);
 	}
 	
 	void processPacket(Packet packet) throws Exception{
@@ -339,6 +295,45 @@ public class CapEnv {
 	
 	public static int toUnsigned(short s) {  
 	    return s & 0x0FFFF;  
+	}
+
+	static class CheckThread implements Runnable{
+
+		private final CapEnv capEnv;
+
+		private volatile long lastActive;
+
+		private static final long MAX_STOP_TIME = 7 * 1000;
+
+		public CheckThread(CapEnv capEnv){
+			this.capEnv =capEnv;
+			this.lastActive = System.currentTimeMillis();
+		}
+
+		@Override
+		public void run() {
+			if(System.currentTimeMillis()-lastActive> MAX_STOP_TIME){
+				for(int i=0;i<10;i++){
+					MLog.info("休眠恢复... "+(i+1));
+					try {
+						boolean success=capEnv.initInterface();
+						if(success){
+							MLog.info("休眠恢复成功 "+(i+1));
+							break;
+						}
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
+					try {
+						Thread.sleep(5*1000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+
+			}
+			lastActive=System.currentTimeMillis();
+		}
 	}
 	
 }

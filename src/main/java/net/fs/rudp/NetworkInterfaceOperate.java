@@ -26,9 +26,9 @@ public class NetworkInterfaceOperate {
     private static final int SNAPLEN = 10 * 1024;
 
     /**
-     *  外国网站 google 效果更好
+     *  外国网站 bing 效果更好
      */
-    private static final String url = "www.google.com";
+    private static final String url = "bing.com";
 
 
     private static InetAddress checkNetWorkInterface() {
@@ -55,32 +55,6 @@ public class NetworkInterfaceOperate {
         return addr;
     }
 
-//    static PcapNetworkInterface detectInterface() {
-//        List<PcapNetworkInterface> allDev;
-//        try {
-//            allDev = Pcaps.findAllDevs();
-//        } catch (PcapNativeException e1) {
-//            e1.printStackTrace();
-//            return null;
-//        }
-//        InetAddress address = checkNetWorkInterface();
-//        PcapNetworkInterface networkInterface = null;
-//        for (final PcapNetworkInterface pi : allDev) {
-//            List<PcapAddress> addresses = pi.getAddresses();
-//            if (addresses.size() == 0){
-//                continue;
-//            }
-//            for (PcapAddress pcapAddress : addresses) {
-//                if (Objects.equals(address, pcapAddress.getAddress())){
-//                    networkInterface = pi;
-//                    break;
-//                }
-//            }
-//        }
-//
-//        return networkInterface;
-//    }
-
     PcapNetworkInterface.PromiscuousMode getMode(PcapNetworkInterface pi) {
         PcapNetworkInterface.PromiscuousMode mode = null;
         String string = (pi.getDescription() + ":" + pi.getName()).toLowerCase();
@@ -95,13 +69,13 @@ public class NetworkInterfaceOperate {
 
     private NetworkInfo detectInterface() {
         List<PcapNetworkInterface> interfaces;
-        HashMap<PcapNetworkInterface, PcapHandle> handleTable = new HashMap<>();
         try {
             interfaces = Pcaps.findAllDevs();
         } catch (PcapNativeException e1) {
             e1.printStackTrace();
             return null;
         }
+        HashMap<PcapNetworkInterface, PcapHandle> handleTable = new HashMap<>(interfaces.size());
         NetworkInfo networkInfo = new NetworkInfo();
         for (final PcapNetworkInterface pi : interfaces) {
             try {
@@ -153,7 +127,7 @@ public class NetworkInterfaceOperate {
                 });
                 thread.start();
             } catch (PcapNativeException | NotOpenException e1) {
-
+                e1.printStackTrace();
             }
 
         }
@@ -199,6 +173,7 @@ public class NetworkInterfaceOperate {
             }
             if (address == null) {
                 MLog.println("域名解析失败,请检查DNS设置!");
+                return null;
             }
             final int por = 80;
             String networkConnectTestIp = address.getHostAddress();
