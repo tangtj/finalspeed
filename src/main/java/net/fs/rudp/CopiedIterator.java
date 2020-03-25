@@ -2,25 +2,36 @@
 
 package net.fs.rudp;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 
- public class CopiedIterator implements Iterator {
-  private Iterator iterator = null;
-  public CopiedIterator(Iterator itr) {
-  LinkedList list = new LinkedList( );
-  while(itr.hasNext( )) {
-  list.add(itr.next( ));
-  }
-  this.iterator = list.iterator( );
-  }
-  public boolean hasNext( ) {
-  return this.iterator.hasNext( );
-  }
-  public void remove( ) {
-  throw new UnsupportedOperationException("This is a read-only iterator.");
-  }
-  public Object next( ) {
-  return this.iterator.next( );
-  }
-  }
+/**
+ * @author TANG
+ */
+public class CopiedIterator<E> implements Iterator<E> {
+    private Iterator<E> iterator;
+
+    public CopiedIterator(Iterator<E> itr) {
+        ArrayList<E> list = new ArrayList<>();
+        while (itr.hasNext()) {
+            list.add(itr.next());
+        }
+        this.iterator = list.iterator();
+    }
+
+    @Override
+    public boolean hasNext() {
+        return this.iterator.hasNext();
+    }
+
+    @Override
+    public void remove() {
+        throw new UnsupportedOperationException("This is a read-only iterator.");
+    }
+
+    @Override
+    public E next() {
+        return this.iterator.next();
+    }
+}
