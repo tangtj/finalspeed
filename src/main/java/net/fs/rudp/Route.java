@@ -27,7 +27,7 @@ public class Route {
 	
 	public AckListManage delayAckManage;
 
-	Object syn_ds2Table=new Object();
+	private static final Object LOCK_OBJ =new Object();
 
 	public int localclientId=Math.abs(RandomUtils.randomInt());
 
@@ -250,7 +250,7 @@ public class Route {
 	}
 
 	void removeConnection(ConnectionUDP conn){
-		synchronized (syn_ds2Table){
+		synchronized (LOCK_OBJ){
 			closedTable.add(conn.connectId);
 			connTable.remove(conn.connectId);
 		}
@@ -262,7 +262,7 @@ public class Route {
 		if(conn==null){
 			ClientControl clientControl=clientManager.getClientControl(clientId,dstIp,dstPort);
 			conn=new ConnectionUDP(this,dstIp,dstPort,2,connectId,clientControl);
-			synchronized (syn_ds2Table){
+			synchronized (LOCK_OBJ){
 				connTable.put(connectId, conn);
 			}
 			clientControl.addConnection(conn);
@@ -279,7 +279,7 @@ public class Route {
 		ClientControl clientControl=clientManager.getClientControl(remote_clientId,dstIp,dstPort);
 		clientControl.setPassword(password);
 		ConnectionUDP conn=new ConnectionUDP(this,dstIp,dstPort,1,connectId,clientControl);
-		synchronized (syn_ds2Table){
+		synchronized (LOCK_OBJ){
 			connTable.put(connectId, conn);
 		}
 		clientControl.addConnection(conn);

@@ -114,7 +114,7 @@ public class TCPTun {
 		sendHandle=capEnv.sendHandle;
 		this.remoteAddress=serverAddress;
 		this.remotePort=serverPort;
-		localAddress=capEnv.local_ipv4;
+		localAddress=capEnv.localIpv4;
 		localPort=(short)(random.nextInt(64*1024-1-10000)+10000);
 		Packet syncPacket=null;
 		try {
@@ -141,7 +141,7 @@ public class TCPTun {
 		this.remotePort=remotePort;
 		sendHandle=capEnv.sendHandle;
 		localPort=capServerEnv.listenPort;
-		localAddress=capEnv.local_ipv4;
+		localAddress=capEnv.localIpv4;
 	}
 
 	void init_client(Inet4Address clientAddress,int clientPort,
@@ -170,8 +170,8 @@ public class TCPTun {
 					MLog.println("接收第一次握手 "+remoteAddress.getHostAddress()+":"+remotePort+"->"+localAddress.getHostAddress()+":"+localPort+" ident "+ipV4Header.getIdentification());
 					MLog.println(""+packet);
 					Packet responePacket=PacketUtils.createSyncAck(
-							capEnv.local_mac,
-							capEnv.gateway_mac,
+							capEnv.localMac,
+							capEnv.gatewayMac,
 							localAddress,(short)localPort,
 							ipV4Header.getSrcAddr(),tcpHeader.getSrcPort().value(),
 							tcpHeader.getSequenceNumber()+1,localStartSequence,(short)0
@@ -182,7 +182,7 @@ public class TCPTun {
 						e.printStackTrace();
 					}
 					localSequence=localStartSequence+1;
-					MLog.println("发送第二次握手 "+capEnv.local_mac+"->"+capEnv.gateway_mac+" "+localAddress+"->"+" ident "+0);
+					MLog.println("发送第二次握手 "+capEnv.localMac +"->"+capEnv.gatewayMac +" "+localAddress+"->"+" ident "+0);
 
 					MLog.println(""+responePacket);
 				}
@@ -249,7 +249,7 @@ public class TCPTun {
 						remoteStartSequence=tcpHeader.getSequenceNumber();
 						remoteSequence=remoteStartSequence+1;
 						remoteSequence_max=remoteSequence;
-						Packet p3=PacketUtils.createAck(capEnv.local_mac, capEnv.gateway_mac, capEnv.local_ipv4, localPort, remoteAddress, remotePort, remoteSequence , localSequence,getIdent());
+						Packet p3=PacketUtils.createAck(capEnv.localMac, capEnv.gatewayMac, capEnv.localIpv4, localPort, remoteAddress, remotePort, remoteSequence , localSequence,getIdent());
 						try {
 							sendHandle.sendPacket(p3);
 							MLog.println("发送第三次握手 "+" ident "+localIdent);
@@ -298,8 +298,8 @@ public class TCPTun {
 				remoteSequence_max=rs;
 			}
 			Packet ackPacket=PacketUtils.createAck(
-					capEnv.local_mac,
-					capEnv.gateway_mac,
+					capEnv.localMac,
+					capEnv.gatewayMac,
 					localAddress,(short)localPort,
 					ipV4Header.getSrcAddr(),tcpHeader.getSrcPort().value(),
 					remoteSequence_max, localSequence,getIdent());
@@ -315,8 +315,8 @@ public class TCPTun {
 	}
 	
 	void sendData(byte[] data){
-		Packet dataPacket=PacketUtils.createDataPacket(capEnv.local_mac,
-							capEnv.gateway_mac,
+		Packet dataPacket=PacketUtils.createDataPacket(capEnv.localMac,
+							capEnv.gatewayMac,
 							localAddress,localPort,
 							remoteAddress,remotePort,
 							localSequence,remoteSequence_max, data, (short) getIdent());
