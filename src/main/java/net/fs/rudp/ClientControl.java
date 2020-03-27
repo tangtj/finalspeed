@@ -8,7 +8,10 @@ import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import net.fs.rudp.message.PingMessage;
 import net.fs.rudp.message.PingMessage2;
 import net.fs.utils.*;
@@ -45,10 +48,8 @@ public class ClientControl {
 	long markTime=0;
 		
 	long lastSendPingTime,lastReceivePingTime=System.currentTimeMillis();
-	
-	Random ran=new Random();
-	
-	HashMap<Integer, Long> pingTable=new HashMap<Integer, Long>();
+
+	private Cache<Integer,Long> pingCache = CacheBuilder.newBuilder().maximumSize(100).expireAfterAccess(2, TimeUnit.MINUTES).build();
 	
 	public int pingDelay=250;
 	
@@ -101,7 +102,7 @@ public class ClientControl {
 		}else if(sType==net.fs.rudp.message.MessageType.sType_PingMessage2){
 			PingMessage2 pm=new PingMessage2(dp);
 			lastReceivePingTime=System.currentTimeMillis();
-			Long t=pingTable.get(pm.getPingId());
+			Long t=pingCache.getIfPresent(pm.getPingId());
 			if(t!=null){
 				pingDelay=(int) (System.currentTimeMillis()-t);
 				String protocal="";
@@ -172,9 +173,10 @@ public class ClientControl {
 	}
 	
 	public void sendPingMessage(){
-		int pingid=Math.abs(ran.nextInt());
+		int pingid=Math.abs(RandomUtils.randomInt());
 		long pingTime=System.currentTimeMillis();
-		pingTable.put(pingid, pingTime);
+		//pingTable.put(pingid, pingTime);
+		pingCache.put(pingid,pingTime);
 		lastSendPingTime=System.currentTimeMillis();
 		PingMessage lm=new PingMessage(0,route.localclientId,pingid,Route.localDownloadSpeed,Route.localUploadSpeed);
 		lm.setDstAddress(dstIp);

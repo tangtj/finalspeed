@@ -43,7 +43,7 @@ public class MapTunnelProcessor implements ConnectionProcessor{
 	public void process(final ConnectionUDP conn){
 		this.conn=conn;
 		pc=this;
-		ThreadUtils.execute(() -> process());
+		ThreadUtils.execute(this::process);
 	}
 
 
