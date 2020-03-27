@@ -106,34 +106,14 @@ public class Route {
 		
 		connTable= new HashMap<>();
 		clientManager=new ClientManager(this);
-		reveiveThread= new Thread(() -> {
-			while(true){
-				byte[] b=new byte[1500];
-				DatagramPacket dp=new DatagramPacket(b,b.length);
-				try {
-					ds.receive(dp);
-					//MLog.println("接收 "+dp.getAddress());
-					packetBuffer.add(dp);
-				} catch (IOException e) {
-					e.printStackTrace();
-					try {
-						Thread.sleep(1);
-					} catch (InterruptedException e1) {
-						e1.printStackTrace();
-					}
-				}
-			}
-		});
-		reveiveThread.start();
+
+		PacketReceiver packetReceiver = new PacketReceiver(ds);
+
+		packetReceiver.init();
 
 		mainThread= new Thread(() -> {
 			while(true){
-				DatagramPacket dp=null;
-				try {
-					dp = packetBuffer.take();
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
+				DatagramPacket dp = packetReceiver.getPacket();
 				if(dp==null){
 					continue;
 				}

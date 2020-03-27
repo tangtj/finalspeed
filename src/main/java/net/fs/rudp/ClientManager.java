@@ -6,15 +6,16 @@ import java.net.InetAddress;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 
 import net.fs.utils.MLog;
+import net.fs.utils.TimerExecutor;
 
 
 public class ClientManager {
-	
+
+	//TODO: 需要改成多线程版
 	HashMap<Integer, ClientControl> clientTable=new HashMap<Integer, ClientControl>();
-	
-	Thread mainThread;
 	
 	Route route;
 	
@@ -26,20 +27,7 @@ public class ClientManager {
 	
 	ClientManager(Route route){
 		this.route=route;
-		mainThread=new Thread(){
-			@Override
-			public void run(){
-				while(true){
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-					scanClientControl();
-				}
-			}
-		};
-		mainThread.start();
+		TimerExecutor.submitTimerTask(this::scanClientControl,1, TimeUnit.SECONDS);
 	}
 	
 	void scanClientControl(){
