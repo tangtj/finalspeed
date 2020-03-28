@@ -2,19 +2,19 @@
 
 package net.fs.rudp;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import net.fs.rudp.message.MessageType;
+import net.fs.rudp.message.PingMessage;
+import net.fs.rudp.message.PingResponseMessage;
+import net.fs.utils.*;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
-
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import net.fs.rudp.message.PingMessage;
-import net.fs.rudp.message.PingMessage2;
-import net.fs.utils.*;
 
 public class ClientControl {
 	
@@ -99,8 +99,8 @@ public class ClientControl {
 			PingMessage pm=new PingMessage(dp);
 			sendPingMessage2(pm.getPingId(),dp.getAddress(),dp.getPort());
 			currentSpeed=pm.getDownloadSpeed()*1024;
-		}else if(sType==net.fs.rudp.message.MessageType.sType_PingMessage2){
-			PingMessage2 pm=new PingMessage2(dp);
+		}else if(sType== MessageType.sType_PingResponseMessage){
+			PingResponseMessage pm=new PingResponseMessage(dp);
 			lastReceivePingTime=System.currentTimeMillis();
 			Long t=pingCache.getIfPresent(pm.getPingId());
 			if(t!=null){
@@ -189,7 +189,7 @@ public class ClientControl {
 			}
 	
 	public void sendPingMessage2(int pingId,InetAddress dstIp,int dstPort){
-		PingMessage2 lm=new PingMessage2(0,route.localclientId,pingId);
+		PingResponseMessage lm=new PingResponseMessage(0,route.localclientId,pingId);
 		lm.setDstAddress(dstIp);
 		lm.setDstPort(dstPort);
 		try {

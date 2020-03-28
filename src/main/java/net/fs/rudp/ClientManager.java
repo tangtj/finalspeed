@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import net.fs.utils.MLog;
@@ -14,8 +15,7 @@ import net.fs.utils.TimerExecutor;
 
 public class ClientManager {
 
-	//TODO: 需要改成多线程版
-	HashMap<Integer, ClientControl> clientTable=new HashMap<Integer, ClientControl>();
+	ConcurrentHashMap<Integer, ClientControl> clientTable= new ConcurrentHashMap<>();
 	
 	Route route;
 	
@@ -57,11 +57,8 @@ public class ClientManager {
 		clientTable.remove(clientId);
 	}
 	
-	Iterator<Integer> getClientTableIterator(){
-		Iterator<Integer> it=null;
-		synchronized (syn_clientTable) {
-			it=new CopiedIterator(clientTable.keySet().iterator());
-		}
+	private Iterator<Integer> getClientTableIterator(){
+		Iterator<Integer> it = new CopiedIterator<>(clientTable.keySet().iterator());
 		return it;
 	}
 	
@@ -69,9 +66,7 @@ public class ClientManager {
 		ClientControl c=clientTable.get(clientId);
 		if(c==null){
 			c=new ClientControl(route,clientId,dstIp,dstPort);
-			synchronized (syn_clientTable) {
-				clientTable.put(clientId, c);
-			}
+			clientTable.put(clientId, c);
 		}
 		return c;
 	}

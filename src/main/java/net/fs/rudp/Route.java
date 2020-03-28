@@ -148,7 +148,7 @@ public class Route {
 //                }
 
                 if (sType == MessageType.sType_PingMessage
-                        || sType == MessageType.sType_PingMessage2) {
+                        || sType == MessageType.sType_PingResponseMessage) {
                     ClientControl clientControl = null;
                     if (mode == RunMode.Server.code) {
                         //发起

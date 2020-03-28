@@ -85,7 +85,7 @@ public class MessageType {
 	public static short sType_getOutAddressMessage2=1182;
 	
 	public static short sType_PingMessage=301;
-	public static short sType_PingMessage2=302;
+	public static short sType_PingResponseMessage=302;
 	
 	public static short sType_PingMessagec=311;
 	public static short sType_PingMessagec2=312;

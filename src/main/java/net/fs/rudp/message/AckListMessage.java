@@ -76,7 +76,7 @@ public class AckListMessage extends Message{
 		
 	}
 
-	public ArrayList getAckList(){
+	public ArrayList<Integer> getAckList(){
 		return ackList;
 	}
 
