@@ -4,6 +4,7 @@
 
 package net.fs.server;
 
+import net.fs.rudp.GlobalProp;
 import net.fs.rudp.Route;
 import net.fs.utils.MLog;
 import net.fs.utils.RunMode;
@@ -32,6 +33,7 @@ public class FSServer {
     private final SystemType systemType;
 
     public static void main(String[] args) {
+        new GlobalProp.Holder(RunMode.Server);
         try {
             FSServer fs = new FSServer();
         } catch (Exception e) {
@@ -68,7 +70,7 @@ public class FSServer {
 
     }
 
-    String readFileData(String path) {
+    private String readFileData(String path) {
         String content = null;
         FileInputStream fis = null;
         DataInputStream dis = null;

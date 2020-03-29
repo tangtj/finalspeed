@@ -22,4 +22,8 @@ public class SystemUtils {
         //先默认返回linux客户端
         return SystemType.Linux;
     }
+
+    public static SystemType getSystem(){
+        return getSystem(System.getProperty("os.name"));
+    }
 }

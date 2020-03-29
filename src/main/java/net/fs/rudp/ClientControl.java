@@ -67,7 +67,7 @@ public class ClientControl {
 	
 	int dstPort;
 	
-	public HashMap<Integer, ConnectionUDP> connTable=new  HashMap<Integer, ConnectionUDP>();
+	public HashMap<Integer, ConnectionUDP> connTable= new HashMap<>();
 		
 	Object syn_connTable=new Object();
 	

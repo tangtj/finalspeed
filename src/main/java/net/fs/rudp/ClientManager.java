@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import net.fs.utils.MLog;
+import net.fs.utils.RunMode;
 import net.fs.utils.TimerExecutor;
 
 
@@ -24,10 +25,15 @@ public class ClientManager {
 	int sendPingInterval=1*1000;
 	
 	Object syn_clientTable=new Object();
+
+	private GlobalProp prop = GlobalProp.getInstance();
 	
 	ClientManager(Route route){
 		this.route=route;
-		TimerExecutor.submitTimerTask(this::scanClientControl,5, TimeUnit.SECONDS);
+		if (prop.getRunMode() != RunMode.Server) {
+			//服务端不需要主动发心跳包给客户端
+			TimerExecutor.submitTimerTask(this::scanClientControl, 5, TimeUnit.SECONDS);
+		}
 	}
 	
 	void scanClientControl(){
