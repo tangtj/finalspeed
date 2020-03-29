@@ -18,7 +18,7 @@ public class Receiver {
 	Sender sender;
 	public InetAddress dstIp;
 	public int dstPort;
-	HashMap<Integer, DataMessage> receiveTable=new HashMap<Integer, DataMessage>();
+	HashMap<Integer, DataMessage> receiveTable= new HashMap<>();
 	int lastRead=-1;
 	int lastReceive=-1;
 	Object availOb=new Object();

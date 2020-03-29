@@ -63,8 +63,8 @@ public class FSServer {
             port_s = port_s.replaceAll("\n", "").replaceAll("\r", "");
             defaultRoutePort = Integer.parseInt(port_s);
         }
-        routeUdp = new Route(mp.getClass().getName(), (short) defaultRoutePort, RunMode.Server, false, true);
-        routeTcp = new Route(mp.getClass().getName(), (short) defaultRoutePort, RunMode.Server, true, true);
+        routeUdp = new Route(mp.getClass(), (short) defaultRoutePort, RunMode.Server, false, true);
+        routeTcp = new Route(mp.getClass(), (short) defaultRoutePort, RunMode.Server, true, true);
 
         new FireWallOperate(defaultRoutePort, systemType, systemName).init();
 

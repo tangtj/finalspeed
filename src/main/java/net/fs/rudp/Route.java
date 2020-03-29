@@ -37,11 +37,11 @@ public class Route {
     //1客户端,2服务端
     public int mode = RunMode.Client.code;
 
-    String pocessName = "";
+    private Class<? extends ConnectionProcessor> processClass;
 
     HashSet<Integer> setedTable = new HashSet<>();
 
-    HashSet<Integer> closedTable = new HashSet<>();
+    //HashSet<Integer> closedTable = new HashSet<>();
 
     Cache<Integer, Object> closeCache = CacheBuilder.newBuilder().expireAfterAccess(10, TimeUnit.MINUTES).maximumSize(50).build();
 
@@ -62,7 +62,7 @@ public class Route {
         delayAckManage = new AckListManage();
     }
 
-    public Route(String pocessName, short routePort, RunMode mode2, boolean tcp, boolean tcpEnvSuccess) throws Exception {
+    public Route(Class<? extends ConnectionProcessor> processClass, short routePort, RunMode mode2, boolean tcp, boolean tcpEnvSuccess) throws Exception {
 
         this.mode = mode2.code;
         if (tcp) {
@@ -70,7 +70,7 @@ public class Route {
         } else {
             protocolType = ProtocolType.UDP;
         }
-        this.pocessName = pocessName;
+        this.processClass = processClass;
         if (protocolType == ProtocolType.TCP) {
             if (mode == RunMode.Server.code) {
                 //服务端
@@ -230,9 +230,8 @@ public class Route {
     public ConnectionProcessor createTunnelProcessor() {
         ConnectionProcessor o = null;
         try {
-            Class onwClass = Class.forName(pocessName);
-            o = (ConnectionProcessor) onwClass.newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            o = processClass.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
             e.printStackTrace();
         }
         return o;
