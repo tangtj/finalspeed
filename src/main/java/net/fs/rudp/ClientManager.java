@@ -27,7 +27,7 @@ public class ClientManager {
 	
 	ClientManager(Route route){
 		this.route=route;
-		TimerExecutor.submitTimerTask(this::scanClientControl,1, TimeUnit.SECONDS);
+		TimerExecutor.submitTimerTask(this::scanClientControl,5, TimeUnit.SECONDS);
 	}
 	
 	void scanClientControl(){

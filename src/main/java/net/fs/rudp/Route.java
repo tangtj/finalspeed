@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Vector;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 
@@ -159,7 +158,7 @@ public class Route {
                         int sim_clientId = Math.abs(key.hashCode());
                         clientControl = clientManager.getClientControl(sim_clientId, dp.getAddress(), dp.getPort());
                     }
-                    clientControl.onReceivePacket(dp);
+                    clientControl.onReceiverHeartPacket(dp);
                 } else {
                     //发起
                     if (mode == RunMode.Client.code) {

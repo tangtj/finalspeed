@@ -90,14 +90,13 @@ public class ClientControl {
 		this.dstPort=dstPort;
 	}
 
-	public void onReceivePacket(DatagramPacket dp){
+	public void onReceiverHeartPacket(DatagramPacket dp){
 		byte[] dpData=dp.getData();
-		int sType=0;
-		sType=MessageCheck.checkSType(dp);
+		int sType=MessageCheck.checkSType(dp);
 		int remote_clientId=ByteIntConvert.toInt(dpData, 8);
 		if(sType==net.fs.rudp.message.MessageType.sType_PingMessage){
 			PingMessage pm=new PingMessage(dp);
-			sendPingMessage2(pm.getPingId(),dp.getAddress(),dp.getPort());
+			sendPingResponseMessage(pm.getPingId(),dp.getAddress(),dp.getPort());
 			currentSpeed=pm.getDownloadSpeed()*1024;
 		}else if(sType== MessageType.sType_PingResponseMessage){
 			PingResponseMessage pm=new PingResponseMessage(dp);
@@ -188,7 +187,7 @@ public class ClientControl {
 		}
 			}
 	
-	public void sendPingMessage2(int pingId,InetAddress dstIp,int dstPort){
+	public void sendPingResponseMessage(int pingId, InetAddress dstIp, int dstPort){
 		PingResponseMessage lm=new PingResponseMessage(0,route.localclientId,pingId);
 		lm.setDstAddress(dstIp);
 		lm.setDstPort(dstPort);
