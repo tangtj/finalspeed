@@ -13,20 +13,19 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 
 public class Route {
 
-    private DatagramSocket ds;
-    public HashMap<Integer, ConnectionUDP> connTable;
-    Thread mainThread;
+    private final DatagramSocket ds;
+    public ConcurrentHashMap<Integer, ConnectionUDP> connTable = new ConcurrentHashMap<>();;
 
-    public AckListManage delayAckManage;
+    public AckListManage delayAckManage = new AckListManage();;
 
     private static final Object LOCK_OBJ = new Object();
 
@@ -43,7 +42,7 @@ public class Route {
 
     //HashSet<Integer> closedTable = new HashSet<>();
 
-    Cache<Integer, Object> closeCache = CacheBuilder.newBuilder().expireAfterAccess(10, TimeUnit.MINUTES).maximumSize(50).build();
+    private final Cache<Integer, Object> closeCache = CacheBuilder.newBuilder().expireAfterAccess(10, TimeUnit.MINUTES).maximumSize(50).build();
 
     public static int localDownloadSpeed, localUploadSpeed;
 
@@ -55,15 +54,9 @@ public class Route {
 
     public ProtocolType protocolType;
 
-    private static List<Trafficlistener> listenerList = new Vector<>();
-
-    {
-
-        delayAckManage = new AckListManage();
-    }
+    private static final List<Trafficlistener> LISTENER_LIST = new Vector<>();
 
     public Route(Class<? extends ConnectionProcessor> processClass, short routePort, RunMode mode2, boolean tcp, boolean tcpEnvSuccess) throws Exception {
-
         this.mode = mode2.code;
         if (tcp) {
             protocolType = ProtocolType.TCP;
@@ -110,15 +103,13 @@ public class Route {
                 ds = new DatagramSocket();
             }
         }
-
-        connTable = new HashMap<>();
         clientManager = new ClientManager(this);
 
         PacketReceiver packetReceiver = new PacketReceiver(ds);
 
         packetReceiver.init();
 
-        mainThread = new Thread(() -> {
+        Thread mainThread = new Thread(() -> {
             while (true) {
                 DatagramPacket dp = packetReceiver.getPacket();
                 if (dp == null) {
@@ -209,11 +200,11 @@ public class Route {
     }
 
     public static void addTrafficlistener(Trafficlistener listener) {
-        listenerList.add(listener);
+        LISTENER_LIST.add(listener);
     }
 
     static void fireEvent(TrafficEvent event) {
-        for (Trafficlistener listener : listenerList) {
+        for (Trafficlistener listener : LISTENER_LIST) {
             int type = event.getType();
             if (type == TrafficEvent.type_downloadTraffic) {
                 listener.trafficDownload(event);
@@ -251,9 +242,7 @@ public class Route {
         if (conn == null) {
             ClientControl clientControl = clientManager.getClientControl(clientId, dstIp, dstPort);
             conn = new ConnectionUDP(this, dstIp, dstPort, 2, connectId, clientControl);
-            synchronized (LOCK_OBJ) {
-                connTable.put(connectId, conn);
-            }
+            connTable.put(connectId, conn);
             clientControl.addConnection(conn);
         }
         return conn;
@@ -268,9 +257,7 @@ public class Route {
         ClientControl clientControl = clientManager.getClientControl(remote_clientId, dstIp, dstPort);
         clientControl.setPassword(password);
         ConnectionUDP conn = new ConnectionUDP(this, dstIp, dstPort, 1, connectId, clientControl);
-        synchronized (LOCK_OBJ) {
-            connTable.put(connectId, conn);
-        }
+        connTable.put(connectId, conn);
         clientControl.addConnection(conn);
         lastClientControl = clientControl;
         return conn;
