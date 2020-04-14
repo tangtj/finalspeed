@@ -4,7 +4,6 @@ package net.fs.rudp;
 
 import java.net.InetAddress;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -16,20 +15,19 @@ import net.fs.utils.TimerExecutor;
 
 public class ClientManager {
 
-	ConcurrentHashMap<Integer, ClientControl> clientTable= new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<Integer, ClientControl> clientTable= new ConcurrentHashMap<>();
 	
-	Route route;
+	private final Route route;
 	
-	int receivePingTimeout=8*1000;
+	private final static int RECEIVE_PING_TIMEOUT =8*1000;
 	
-	int sendPingInterval=1*1000;
+	private final static int SEND_PING_INTERVAL = 1000;
 	
-	Object syn_clientTable=new Object();
+	private final Object objLock =new Object();
 
-	private GlobalProp prop = GlobalProp.getInstance();
-	
 	ClientManager(Route route){
 		this.route=route;
+		GlobalProp prop = GlobalProp.getInstance();
 		if (prop.getRunMode() != RunMode.Server) {
 			//服务端不需要主动发心跳包给客户端
 			TimerExecutor.submitTimerTask(this::scanClientControl, 5, TimeUnit.SECONDS);
@@ -39,19 +37,18 @@ public class ClientManager {
 	void scanClientControl(){
 		Iterator<Integer> it=getClientTableIterator();
 		long current=System.currentTimeMillis();
-		//MLog.println("ffffffffffff "+clientTable.size());
 		while(it.hasNext()){
 			ClientControl cc=clientTable.get(it.next());
 			if(cc!=null){
-				if(current-cc.getLastReceivePingTime()<receivePingTimeout){
-					if(current-cc.getLastSendPingTime()>sendPingInterval){
+				if(current-cc.getLastReceivePingTime()< RECEIVE_PING_TIMEOUT){
+					if(current-cc.getLastSendPingTime()> SEND_PING_INTERVAL){
 						cc.sendPingMessage();
 					}
 				}else {
 					//超时关闭client
 					MLog.println("超时关闭client "+cc.dstIp.getHostAddress()+":"+cc.dstPort+" "+new Date());
 //					System.exit(0);
-					synchronized (syn_clientTable) {
+					synchronized (objLock) {
 						cc.close();
 					}
 				}
@@ -64,17 +61,11 @@ public class ClientManager {
 	}
 	
 	private Iterator<Integer> getClientTableIterator(){
-		Iterator<Integer> it = new CopiedIterator<>(clientTable.keySet().iterator());
-		return it;
+		return new CopiedIterator<>(clientTable.keySet().iterator());
 	}
 	
-	ClientControl getClientControl(int clientId,InetAddress dstIp,int dstPort){
-		ClientControl c=clientTable.get(clientId);
-		if(c==null){
-			c=new ClientControl(route,clientId,dstIp,dstPort);
-			clientTable.put(clientId, c);
-		}
-		return c;
+	public ClientControl getClientControl(int clientId,InetAddress dstIp,int dstPort){
+		return clientTable.computeIfAbsent(clientId, k-> new ClientControl(route,clientId,dstIp,dstPort));
 	}
 	
 }

@@ -10,7 +10,7 @@ import java.util.LinkedList;
  * @author TANG
  */
 public class CopiedIterator<E> implements Iterator<E> {
-    private Iterator<E> iterator;
+    private final Iterator<E> iterator;
 
     public CopiedIterator(Iterator<E> itr) {
         ArrayList<E> list = new ArrayList<>();
