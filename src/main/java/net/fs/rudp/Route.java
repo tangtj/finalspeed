@@ -27,16 +27,16 @@ public class Route {
 
     public AckListManage delayAckManage = new AckListManage();;
 
-    private static final Object LOCK_OBJ = new Object();
+    private final Object LOCK_OBJ = new Object();
 
     public int localclientId = Math.abs(RandomUtils.randomInt());
 
 //	LinkedBlockingQueue<DatagramPacket> packetBuffer= new LinkedBlockingQueue<>();
 
     //1客户端,2服务端
-    public int mode = RunMode.Client.code;
+    public int mode;
 
-    private Class<? extends ConnectionProcessor> processClass;
+    private final Class<? extends ConnectionProcessor> processClass;
 
     HashSet<Integer> setedTable = new HashSet<>();
 

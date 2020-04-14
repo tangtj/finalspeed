@@ -4,19 +4,20 @@ package net.fs.rudp;
 
 public class SendRecord {
 	
-	int sendSize,sendSize_First;
+	private int sendSize;
+	private int	sendSize_First;
 	
-	int sendCount;
+	private int sendCount;
 	
 	int ackedSize;
 	
 	int timeId;
 	
-	int speed;
+	private int speed;
 	
-	boolean speedRecored=false;
+	private boolean speedRecored=false;
 	
-	int resended;
+	private int reSended;
 	
 	SendRecord(){
 		
@@ -37,13 +38,13 @@ public class SendRecord {
 	float getResendRate(){
 		float resendRate=0;
 		if(getSendSize_First()>0){
-			resendRate=(float)getResended()/getSendSize_First();
+			resendRate=(float) getReSended()/getSendSize_First();
 		}
 		return resendRate;
 	}
 	
 	void addResended(int size){
-		resended+=size;
+		reSended +=size;
 	}
 	
 	void addSended(int size){
@@ -95,12 +96,12 @@ public class SendRecord {
 		return speedRecored;
 	}
 
-	public int getResended() {
-		return resended;
+	public int getReSended() {
+		return reSended;
 	}
 
-	public void setResended(int resended) {
-		this.resended = resended;
+	public void setReSended(int reSended) {
+		this.reSended = reSended;
 	}
 
 	public int getSendSize_First() {
