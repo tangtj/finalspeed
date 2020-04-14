@@ -46,7 +46,7 @@ public class PortMapProcess implements ClientProcessorInterface{
 		try {
 			srcIs = new DataInputStream(srcSocket.getInputStream());
 			srcOs=new DataOutputStream(srcSocket.getOutputStream());
-			conn = route.getConnection(serverAddress2, serverPort2,null);
+			conn = route.getConnection(serverAddress2, serverPort2);
 			tis=conn.uis;
 			tos=conn.uos;
 
@@ -137,7 +137,7 @@ public class PortMapProcess implements ClientProcessorInterface{
 				tos.closeStream_Local();
 			}
 			if(tis!=null){
-				tis.closeStream_Local();
+				tis.closeStreamLocal();
 			}
 			if(conn!=null){
 				conn.closeLocal();

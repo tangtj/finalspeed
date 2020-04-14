@@ -24,7 +24,7 @@ public class UDPOutputStream {
 	}
 	
 	public void closeStream_Local(){
-		sender.closeStream_Local();
+		sender.closeStreamLocal();
 	}
 	
 }

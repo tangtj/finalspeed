@@ -40,14 +40,7 @@ public class CapEnv {
 	public PcapHandle sendHandle;
 	
 	VDatagramSocket vDatagramSocket;
-	
-	String testIp_tcp="";
-	
-	String testIp_udp="5.5.5.5";
-	
-	String selectedInterfaceName=null;
-	
-	String selectedInterfaceDes="";
+
 
 	private PcapNetworkInterface nif;
 
@@ -61,17 +54,17 @@ public class CapEnv {
 //
 //	Random random=new Random();
 
-	boolean client=false;
+	final boolean isClient;
 	
 	short listenPort;
 	
 	TunManager tcpManager=null;
 	
-	CapEnv capEnv;
+	private final CapEnv capEnv;
 	
-	Thread versinMonThread;
-	
-	boolean detect_by_tcp=true;
+//	Thread versinMonThread;
+//
+//	boolean detect_by_tcp=true;
 	
 	public boolean tcpEnable=false;
 	
@@ -84,7 +77,7 @@ public class CapEnv {
 	}
 	
 	public CapEnv(boolean isClient,boolean fwSuccess){
-		this.client=isClient;
+		this.isClient =isClient;
 		this.fwSuccess=fwSuccess;
 		tcpManager=new TunManager(this);
 	}
@@ -111,7 +104,7 @@ public class CapEnv {
 			if(ipV4Packet.getPayload() instanceof TcpPacket){
 				TcpPacket tcpPacket=(TcpPacket) ipV4Packet.getPayload();
 				TcpHeader tcpHeader=tcpPacket.getHeader();
-				if(client){
+				if(isClient){
 					TCPTun conn=tcpManager.getTcpConnection_Client(ipV4Header.getSrcAddr().getHostAddress(),tcpHeader.getSrcPort().value(), tcpHeader.getDstPort().value());
 					if(conn!=null){
 						conn.process_client(capEnv,packet,head_eth,ipV4Header,tcpPacket,false);
@@ -176,8 +169,8 @@ public class CapEnv {
 			sendHandle = nif.openLive(SNAPLEN, getMode(nif), READ_TIMEOUT);
 //			final PcapHandle handle= nif.openLive(SNAPLEN, getMode(nif), READ_TIMEOUT);
 			
-			String filter="";
-			if(!client){
+			String filter;
+			if(!isClient){
 				//服务端
 				filter="tcp dst port "+toUnsigned(listenPort);
 			}else{
@@ -210,7 +203,7 @@ public class CapEnv {
 			thread.start();
 		}
 		
-		if(!client){
+		if(!isClient){
 			MLog.info("FinalSpeed server start success.");
 		}
 		return success;
@@ -288,7 +281,7 @@ public class CapEnv {
 
 	public void setListenPort(short listenPort) {
 		this.listenPort = listenPort;
-		if(!client){
+		if(!isClient){
 			MLog.info("Listen tcp port: "+toUnsigned(listenPort));
 		}
 	}

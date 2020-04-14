@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 public class Route {
 
     private final DatagramSocket ds;
-    public ConcurrentHashMap<Integer, ConnectionUDP> connTable = new ConcurrentHashMap<>();;
+    public final ConcurrentHashMap<Integer, ConnectionUDP> connTable = new ConcurrentHashMap<>();
 
     public AckListManage delayAckManage = new AckListManage();;
 
@@ -38,7 +38,7 @@ public class Route {
 
     private final Class<? extends ConnectionProcessor> processClass;
 
-    HashSet<Integer> setedTable = new HashSet<>();
+    private final HashSet<Integer> setedTable = new HashSet<>();
 
     //HashSet<Integer> closedTable = new HashSet<>();
 
@@ -249,13 +249,12 @@ public class Route {
     }
 
     //发起连接
-    public ConnectionUDP getConnection(String address, int dstPort, String password) throws Exception {
+    public ConnectionUDP getConnection(String address, int dstPort) throws Exception {
         InetAddress dstIp = InetAddress.getByName(address);
         int connectId = Math.abs(RandomUtils.randomInt());
         String key = dstIp.getHostAddress() + ":" + dstPort;
         int remote_clientId = Math.abs(key.hashCode());
         ClientControl clientControl = clientManager.getClientControl(remote_clientId, dstIp, dstPort);
-        clientControl.setPassword(password);
         ConnectionUDP conn = new ConnectionUDP(this, dstIp, dstPort, 1, connectId, clientControl);
         connTable.put(connectId, conn);
         clientControl.addConnection(conn);

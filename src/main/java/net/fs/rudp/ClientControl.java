@@ -72,9 +72,9 @@ public class ClientControl {
 
     public ConcurrentHashMap<Integer, ConnectionUDP> connTable = new ConcurrentHashMap<>();
 
-    private final Object objLock = new Object();
+//    private final Object objLock = new Object();
 
-    String password;
+//    private String password;
 
     public ResendManage resendMange;
 
@@ -305,12 +305,12 @@ public class ClientControl {
         this.lastReceivePingTime = lastReceivePingTime;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
+//    public String getPassword() {
+//        return password;
+//    }
+//
+//    public void setPassword(String password) {
+//        this.password = password;
+//    }
 
 }

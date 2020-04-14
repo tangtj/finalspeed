@@ -3,7 +3,6 @@
 package net.fs.rudp;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ConnectionUDP {
@@ -87,7 +86,7 @@ public class ConnectionUDP {
 		if(!localClosed){
 			localClosed=true;
 			if(!stopnow){
-				sender.sendCloseMessage_Conn();
+				sender.sendCloseConnMessage();
 			}
 			destroy(false);
 		}
@@ -106,7 +105,7 @@ public class ConnectionUDP {
 			if((localClosed&&remoteClosed)||force){
 				destroied=true;
 				connected=false;
-				uis.closeStream_Local();
+				uis.closeStreamLocal();
 				uos.closeStream_Local();
 				sender.destroy();
 				receiver.destroy();

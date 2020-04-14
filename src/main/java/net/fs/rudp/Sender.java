@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.fs.rudp.message.AckListMessage;
@@ -23,14 +21,13 @@ public class Sender {
     public int sum = 0;
     int sleepTime = 100;
     ConnectionUDP conn;
-    Receiver receiver = null;
     //	boolean bussy=false;
 //	Object bussyOb=new Object();
 //	boolean isHave=false;
     public ConcurrentHashMap<Integer, DataMessage> sendTable = new ConcurrentHashMap<>();
     //	boolean isReady=false;
 //	Object readyOb=new Object();
-    Object winOb = new Object();
+    final Object winOb = new Object();
     public InetAddress dstIp;
     public int dstPort;
     public int sequence = 0;
@@ -39,8 +36,6 @@ public class Sender {
 //	int unAckMin=0;
     int unAckMax = -1;
     int sendSum = 0;
-    //	int reSendSum=0;
-    UDPOutputStream uos;
 
     long lastSendTime = -1;
 
@@ -56,8 +51,6 @@ public class Sender {
 
     Sender(ConnectionUDP conn) {
         this.conn = conn;
-        uos = new UDPOutputStream(conn);
-        receiver = conn.receiver;
         this.dstIp = conn.dstIp;
         this.dstPort = conn.dstPort;
     }
@@ -102,8 +95,9 @@ public class Sender {
         me.setDstPort(dstPort);
         sendTable.put(me.getSequence(), me);
 
-        synchronized (winOb) {
-            if (!conn.receiver.checkWin()) {
+
+        if (!conn.receiver.checkWin()) {
+            synchronized (winOb) {
                 try {
                     winOb.wait();
                 } catch (InterruptedException e) {
@@ -128,13 +122,14 @@ public class Sender {
         sequence++;//必须放最后
     }
 
-    public void closeStream_Local() {
-        if (!streamClosed) {
-            streamClosed = true;
-            conn.receiver.closeStream_Local();
-            if (!conn.stopnow) {
-                sendCloseMessage_Stream();
-            }
+    public void closeStreamLocal() {
+        if (streamClosed) {
+            return;
+        }
+        streamClosed = true;
+        conn.receiver.closeStreamLocal();
+        if (!conn.stopnow) {
+            sendCloseStreamMessage();
         }
     }
 
@@ -234,23 +229,21 @@ public class Sender {
         }
     }
 
-    void sendCloseMessage_Stream() {
+    void sendCloseStreamMessage() {
         CloseMessage_Stream cm = new CloseMessage_Stream(conn.connectId, conn.route.localclientId, sequence);
         cm.setDstAddress(dstIp);
         cm.setDstPort(dstPort);
-        try {
-            send(cm.getDatagramPacket());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            send(cm.getDatagramPacket());
-        } catch (IOException e) {
-            e.printStackTrace();
+        int sendTimes = 2;
+        for (int i = 0; i < sendTimes; i++) {
+            try {
+                send(cm.getDatagramPacket());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    void sendCloseMessage_Conn() {
+    void sendCloseConnMessage() {
         CloseMessage_Conn cm = new CloseMessage_Conn(conn.connectId, conn.route.localclientId);
         cm.setDstAddress(dstIp);
         cm.setDstPort(dstPort);

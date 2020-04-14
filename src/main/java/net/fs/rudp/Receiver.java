@@ -5,10 +5,10 @@ package net.fs.rudp;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import net.fs.rudp.message.AckListMessage;
 import net.fs.rudp.message.CloseMessage_Conn;
 import net.fs.rudp.message.CloseMessage_Stream;
@@ -17,68 +17,54 @@ import net.fs.utils.MessageCheck;
 
 
 public class Receiver {
-    ConnectionUDP conn;
-    Sender sender;
-    public InetAddress dstIp;
-    public int dstPort;
-    private final ConcurrentHashMap<Integer, DataMessage> receiveTable = new ConcurrentHashMap<>();
+    private final ConnectionUDP conn;
+
+    private final Cache<Integer, DataMessage> receiveTable = CacheBuilder.newBuilder().expireAfterAccess(2, TimeUnit.MINUTES).build();
     int lastRead = -1;
-    //int lastReceive=-1;
-    final Object availOb = new Object();
+    private final Object availOb = new Object();
+    private int lastRead2 = -1;
 
-    //boolean isReady=false;
-    //Object readyOb=new Object();
-    byte[] b4 = new byte[4];
-    //int lastRead1=0;
-    //int maxWinR=10;
-    int lastRead2 = -1;
-    UDPInputStream uis;
+    private final int availWin = RUDPConfig.maxWin;
 
-    float availWin = RUDPConfig.maxWin;
+    private int currentRemoteTimeId;
 
-    int currentRemoteTimeId;
+    private int closeOffset;
 
-    int closeOffset;
+    private boolean streamClose = false;
 
-    boolean streamClose = false;
+    private boolean receivedClose = false;
 
-    boolean reveivedClose = false;
-
-    //static int m=0,x,x2,c;
-
-    //boolean b=false;
-
-    public int nw;
-
-    long received;
+    private int nw;
 
     Receiver(ConnectionUDP conn) {
         this.conn = conn;
-        uis = new UDPInputStream(conn);
-        this.sender = conn.sender;
-        this.dstIp = conn.dstIp;
-        this.dstPort = conn.dstPort;
+        InetAddress dstIp = conn.dstIp;
+        int dstPort = conn.dstPort;
     }
 
-    //接收流数据
+    /**
+     *  接收数据包
+     * @return
+     * @throws ConnectException
+     */
     public byte[] receive() throws ConnectException {
 
         if (!conn.isConnected()) {
             throw new ConnectException("连接未建立");
         }
-        DataMessage me = receiveTable.get(lastRead + 1);
+        final int nextSeq = lastRead + 1;
+        DataMessage me = receiveTable.getIfPresent(nextSeq);
         if (me == null) {
             synchronized (availOb) {
-                //MLog.println("等待中 "+conn.connectId+" "+(lastRead+1));
 
                 try {
                     availOb.wait();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                me = receiveTable.get(lastRead + 1);
-                //MLog.println("等待完成aaa "+conn.connectId+" "+(lastRead+1));
+
             }
+            me = receiveTable.getIfPresent(nextSeq);
         }
 
         if (!streamClose) {
@@ -89,11 +75,8 @@ public class Receiver {
             conn.sender.sendLastReadDelay();
 
             lastRead++;
-            synchronized (availOb) {
-                receiveTable.remove(me.getSequence());
-            }
+            receiveTable.invalidate(me.getSequence());
 
-            received += me.getData().length;
             //System.out.println("received "+received/1024/1024+"MB");
             return me.getData();
         } else {
@@ -129,10 +112,10 @@ public class Receiver {
 
                         conn.sender.sendAckDelay(me.getSequence());
                         if (sequence > lastRead) {
+                            receiveTable.put(sequence, me);
                             synchronized (availOb) {
-                                receiveTable.put(sequence, me);
-                                if (receiveTable.containsKey(lastRead + 1)) {
-                                    availOb.notify();
+                                if (receiveTable.getIfPresent(lastRead + 1) != null) {
+                                    availOb.notifyAll();
                                 }
                             }
                         }
@@ -174,7 +157,7 @@ public class Receiver {
                         }
                     } else if (sType == net.fs.rudp.message.MessageType.sType_CloseMessage_Stream) {
                         CloseMessage_Stream cm = new CloseMessage_Stream(dp);
-                        reveivedClose = true;
+                        receivedClose = true;
                         int n = cm.getCloseOffset();
                         closeStream_Remote(n);
                     } else if (sType == net.fs.rudp.message.MessageType.sType_CloseMessage_Conn) {
@@ -192,9 +175,7 @@ public class Receiver {
 
     public void destroy() {
         //#MLog.println("destroy destroy destroy");
-        synchronized (availOb) {
-            receiveTable.clear();
-        }
+        receiveTable.invalidateAll();
     }
 
     boolean checkWin() {
@@ -216,7 +197,7 @@ public class Receiver {
 
     void checkCloseOffset_Remote() {
         if (!streamClose) {
-            if (reveivedClose) {
+            if (receivedClose) {
                 if (lastRead >= closeOffset - 1) {
                     streamClose = true;
                     synchronized (availOb) {
@@ -228,15 +209,16 @@ public class Receiver {
         }
     }
 
-    void closeStream_Local() {
-        if (!streamClose) {
-            //c++;
-            streamClose = true;
-            synchronized (availOb) {
-                availOb.notifyAll();
-            }
-            conn.sender.closeStream_Local();
+    void closeStreamLocal() {
+        if (streamClose) {
+            return;
         }
+        //c++;
+        streamClose = true;
+        synchronized (availOb) {
+            availOb.notifyAll();
+        }
+        conn.sender.closeStreamLocal();
     }
 
     public int getCurrentTimeId() {
