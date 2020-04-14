@@ -279,7 +279,7 @@ public class Sender {
 	
 	void sendALMessage(ArrayList ackList){
 		int currentTimeId=conn.receiver.getCurrentTimeId();
-		AckListMessage alm=new AckListMessage(conn.connetionId,ackList,conn.receiver.lastRead,conn
+		AckListMessage alm=new AckListMessage(conn.connectionId,ackList,conn.receiver.lastRead,conn
 				.clientControl.sendRecordTable_remote,currentTimeId,
 				conn.connectId,conn.route.localclientId);
 		alm.setDstAddress(dstIp);

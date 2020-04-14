@@ -20,14 +20,14 @@ public class Receiver {
 	public int dstPort;
 	HashMap<Integer, DataMessage> receiveTable= new HashMap<>();
 	int lastRead=-1;
-	int lastReceive=-1;
+	//int lastReceive=-1;
 	Object availOb=new Object();
 
-	boolean isReady=false;
-	Object readyOb=new Object();
+	//boolean isReady=false;
+	//Object readyOb=new Object();
 	byte[] b4=new byte[4];
-	int lastRead1=0;
-	int maxWinR=10;
+	//int lastRead1=0;
+	//int maxWinR=10;
 	int lastRead2=-1;
 	UDPInputStream uis;
 
@@ -41,9 +41,9 @@ public class Receiver {
 
 	boolean reveivedClose=false;
 
-	static int m=0,x,x2,c;
+	//static int m=0,x,x2,c;
 
-	boolean b=false,b2;
+	//boolean b=false;
 
 	public int nw;
 	
@@ -178,7 +178,7 @@ public class Receiver {
 						closeStream_Remote(n);
 					}else if(sType==net.fs.rudp.message.MessageType.sType_CloseMessage_Conn){
 						CloseMessage_Conn cm2=new CloseMessage_Conn(dp);
-						conn.close_remote();
+						conn.closeRemote();
 					}else{
 						////#MLog.println("未处理数据包 "+sType);
 					}
@@ -229,7 +229,7 @@ public class Receiver {
 
 	void closeStream_Local(){
 		if(!streamClose){
-			c++;
+			//c++;
 			streamClose=true;
 			synchronized (availOb){
 				availOb.notifyAll();

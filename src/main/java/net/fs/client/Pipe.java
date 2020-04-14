@@ -4,47 +4,24 @@ package net.fs.client;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import net.fs.rudp.ConnectionUDP;
+import net.fs.rudp.GlobalProp;
 import net.fs.rudp.UDPInputStream;
 import net.fs.rudp.UDPOutputStream;
 import net.fs.utils.MLog;
+import net.fs.utils.RunMode;
 
 public class Pipe {
 
-
-	int lastTime=-1;
-
+	int readerLength;
 	
-	boolean readed=false;
-	
-	public Pipe p2;
-	
-	byte[] pv;
-	
-	int pvl;
-	
-	int readedLength;
-	
-	String successMessage;
-	
-	int dstPort=-1;
+	private int dstPort=-1;
 
 	public void pipe(InputStream is,UDPOutputStream tos,int initSpeed,final Pipe p2) throws Exception{
-		
 		int len=0;
 		byte[] buf=new byte[100*1024];
-		boolean sendeda=false;
 		while((len=is.read(buf))>0){
-			readed=true;
-			if(!sendeda){
-				sendeda=true;
-			}
 			tos.write(buf, 0, len);
 		}
 	}
@@ -72,14 +49,9 @@ public class Pipe {
 		int n=0;
 		boolean msged=false;
 		while((len=tis.read(buf, 0, buf.length))>0){
-			readedLength+=len;
-			if(!sendedb){
-				pv=buf;
-				pvl=len;
-				sendedb=true;
-			}
+			readerLength +=len;
 			if(dstPort>0){
-				if(ClientUI.ui!=null){
+				if (GlobalProp.getInstance().getRunMode() == RunMode.Client) {
 					if(!msged){
 						msged=true;
 						String msg="端口"+dstPort+"连接成功";
@@ -90,16 +62,13 @@ public class Pipe {
 				}
 			}
 			os.write(buf, 0, len);
-			if(!sended){
-				sended=true;
-			}
 		}
 	}
 
 
 
-	public int getReadedLength() {
-		return readedLength;
+	public int getReaderLength() {
+		return readerLength;
 	}
 
 

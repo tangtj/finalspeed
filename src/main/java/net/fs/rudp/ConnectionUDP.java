@@ -13,20 +13,18 @@ public class ConnectionUDP {
 	public Receiver receiver;
 	public UDPOutputStream uos;
 	public UDPInputStream uis;
-	long connetionId;
+	long connectionId;
 	Route route;
 	int mode;
 	private boolean connected=true;
 	long lastLiveTime=System.currentTimeMillis();
 	long lastSendLiveTime=0;
 	
-	static Random ran=new Random();
-	
 	int connectId;
 	
 	ConnectionProcessor connectionProcessor;
 	
-	private LinkedBlockingQueue<DatagramPacket> dpBuffer=new LinkedBlockingQueue<DatagramPacket>();
+	private final LinkedBlockingQueue<DatagramPacket> dpBuffer= new LinkedBlockingQueue<>();
 	
 	public ClientControl clientControl;
 	
@@ -73,8 +71,7 @@ public class ConnectionUDP {
 	}
 	
 	public DatagramPacket getPacket(int connectId) throws InterruptedException{
-		DatagramPacket dp=(DatagramPacket)dpBuffer.take();
-		return dp;
+		return dpBuffer.take();
 	}
 	
 	@Override
@@ -86,7 +83,7 @@ public class ConnectionUDP {
 		return connected;
 	}
 	
-	public void close_local(){
+	public void closeLocal(){
 		if(!localClosed){
 			localClosed=true;
 			if(!stopnow){
@@ -96,7 +93,7 @@ public class ConnectionUDP {
 		}
 	}
 	
-	public void close_remote() {
+	public void closeRemote() {
 		if(!remoteClosed){
 			remoteClosed=true;
 			destroy(false);
