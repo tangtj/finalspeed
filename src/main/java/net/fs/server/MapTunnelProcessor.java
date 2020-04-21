@@ -127,7 +127,7 @@ public class MapTunnelProcessor implements ConnectionProcessor{
 				}
 			}
 			if(tos!=null){
-				tos.closeStream_Local();
+				tos.closeStreamLocal();
 			}
 			if(tis!=null){
 				tis.closeStreamLocal();

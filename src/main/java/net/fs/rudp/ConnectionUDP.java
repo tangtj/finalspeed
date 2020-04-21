@@ -8,20 +8,18 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class ConnectionUDP {
 	public InetAddress dstIp;
 	public int dstPort;
-	public Sender sender;
-	public Receiver receiver;
+	public final Sender sender;
+	public final Receiver receiver;
 	public UDPOutputStream uos;
 	public UDPInputStream uis;
 	long connectionId;
 	Route route;
 	int mode;
 	private boolean connected=true;
-	long lastLiveTime=System.currentTimeMillis();
-	long lastSendLiveTime=0;
 	
 	int connectId;
 	
-	ConnectionProcessor connectionProcessor;
+	private ConnectionProcessor connectionProcessor;
 	
 	private final LinkedBlockingQueue<DatagramPacket> dpBuffer= new LinkedBlockingQueue<>();
 	
@@ -106,7 +104,7 @@ public class ConnectionUDP {
 				destroied=true;
 				connected=false;
 				uis.closeStreamLocal();
-				uos.closeStream_Local();
+				uos.closeStreamLocal();
 				sender.destroy();
 				receiver.destroy();
 				route.removeConnection(this);
@@ -120,6 +118,6 @@ public class ConnectionUDP {
 	}
 	
 	void live(){
-		lastLiveTime=System.currentTimeMillis();
+		long lastLiveTime = System.currentTimeMillis();
 	}
 }

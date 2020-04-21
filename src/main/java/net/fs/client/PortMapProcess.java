@@ -134,7 +134,7 @@ public class PortMapProcess implements ClientProcessorInterface{
 				}
 			}
 			if(tos!=null){
-				tos.closeStream_Local();
+				tos.closeStreamLocal();
 			}
 			if(tis!=null){
 				tis.closeStreamLocal();
