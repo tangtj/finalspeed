@@ -4,6 +4,7 @@
 
 package net.fs.server;
 
+import net.fs.rudp.GlobalProp;
 import net.fs.rudp.Route;
 import net.fs.utils.MLog;
 import net.fs.utils.RunMode;
@@ -27,11 +28,8 @@ public class FSServer {
 
     static FSServer udpServer;
 
-    String systemName = System.getProperty("os.name").toLowerCase();
-
-    private final SystemType systemType;
-
     public static void main(String[] args) {
+        new GlobalProp.Holder(RunMode.Server);
         try {
             FSServer fs = new FSServer();
         } catch (Exception e) {
@@ -52,23 +50,24 @@ public class FSServer {
         MLog.info("");
         MLog.info("FinalSpeed server starting... ");
         udpServer = this;
-        systemType = SystemUtils.getSystem(systemName);
+        String systemName = System.getProperty("os.name").toLowerCase();
+        SystemType systemType = SystemUtils.getSystem(systemName);
         MLog.info("System Name: " + systemType);
         final MapTunnelProcessor mp = new MapTunnelProcessor();
 
-        String port_s = readFileData("./cnf/listen_port");
-        if (port_s != null && !"".equals(port_s.trim())) {
-            port_s = port_s.replaceAll("\n", "").replaceAll("\r", "");
-            defaultRoutePort = Integer.parseInt(port_s);
+        String ports = readFileData("./cnf/listen_port");
+        if (ports != null && !"".equals(ports.trim())) {
+            ports = ports.replaceAll("\n", "").replaceAll("\r", "");
+            defaultRoutePort = Integer.parseInt(ports);
         }
-        routeUdp = new Route(mp.getClass().getName(), (short) defaultRoutePort, RunMode.Server, false, true);
-        routeTcp = new Route(mp.getClass().getName(), (short) defaultRoutePort, RunMode.Server, true, true);
+        routeUdp = new Route(mp.getClass(), (short) defaultRoutePort, RunMode.Server, false, true);
+        routeTcp = new Route(mp.getClass(), (short) defaultRoutePort, RunMode.Server, true, true);
 
         new FireWallOperate(defaultRoutePort, systemType, systemName).init();
 
     }
 
-    String readFileData(String path) {
+    private String readFileData(String path) {
         String content = null;
         FileInputStream fis = null;
         DataInputStream dis = null;

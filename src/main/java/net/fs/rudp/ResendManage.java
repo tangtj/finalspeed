@@ -17,7 +17,7 @@ public class ResendManage implements Runnable{
 	long vTime=0;
 	long lastReSendTime;
 	
-	LinkedBlockingQueue<ResendItem> taskList=new LinkedBlockingQueue<ResendItem>();
+	LinkedBlockingQueue<ResendItem> taskList= new LinkedBlockingQueue<>();
 	
 	public ResendManage(){
 		ThreadUtils.execute(this);
@@ -38,6 +38,7 @@ public class ResendManage implements Runnable{
 		return time;
 	}
 	
+	@Override
 	public void run() {
 		while(true){
 			try {
@@ -52,15 +53,6 @@ public class ResendManage implements Runnable{
 					if(ri.conn.sender.getDataMessage(ri.sequence)!=null){
 
 						if(!ri.conn.stopnow){
-							//多线程重发容易内存溢出
-//							Route.es.execute(new Runnable() {
-//								
-//								@Override
-//								public void run() {
-//									ri.conn.sender.reSend(ri.sequence,ri.getCount());
-//								}
-//								
-//							});
 							ri.conn.sender.reSend(ri.sequence,ri.getCount());
 						}
 					

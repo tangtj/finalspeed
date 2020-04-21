@@ -18,7 +18,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
 import net.fs.rudp.Route;
-import net.fs.utils.MLog;
 import net.fs.utils.ThreadUtils;
 
 public class PortMapManager {
@@ -201,7 +200,7 @@ public class PortMapManager {
 							}else {
 								route=mapClient.route_udp;
 							}
-							PortMapProcess process=new PortMapProcess(mapClient,route, socket,mapClient.serverAddress,mapClient.serverPort,null,
+							PortMapProcess process=new PortMapProcess(mapClient,route, socket,mapClient.serverAddress,mapClient.serverPort,
 									null,mapRule.dst_port);
 						}
 					});

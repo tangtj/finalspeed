@@ -3,7 +3,6 @@
 package net.fs.rudp;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ConnectionUDP {
@@ -13,20 +12,18 @@ public class ConnectionUDP {
 	public Receiver receiver;
 	public UDPOutputStream uos;
 	public UDPInputStream uis;
-	long connetionId;
+	long connectionId;
 	Route route;
 	int mode;
 	private boolean connected=true;
 	long lastLiveTime=System.currentTimeMillis();
 	long lastSendLiveTime=0;
 	
-	static Random ran=new Random();
-	
 	int connectId;
 	
 	ConnectionProcessor connectionProcessor;
 	
-	private LinkedBlockingQueue<DatagramPacket> dpBuffer=new LinkedBlockingQueue<DatagramPacket>();
+	private final LinkedBlockingQueue<DatagramPacket> dpBuffer= new LinkedBlockingQueue<>();
 	
 	public ClientControl clientControl;
 	
@@ -73,8 +70,7 @@ public class ConnectionUDP {
 	}
 	
 	public DatagramPacket getPacket(int connectId) throws InterruptedException{
-		DatagramPacket dp=(DatagramPacket)dpBuffer.take();
-		return dp;
+		return dpBuffer.take();
 	}
 	
 	@Override
@@ -86,17 +82,17 @@ public class ConnectionUDP {
 		return connected;
 	}
 	
-	public void close_local(){
+	public void closeLocal(){
 		if(!localClosed){
 			localClosed=true;
 			if(!stopnow){
-				sender.sendCloseMessage_Conn();
+				sender.sendCloseConnMessage();
 			}
 			destroy(false);
 		}
 	}
 	
-	public void close_remote() {
+	public void closeRemote() {
 		if(!remoteClosed){
 			remoteClosed=true;
 			destroy(false);
@@ -109,7 +105,7 @@ public class ConnectionUDP {
 			if((localClosed&&remoteClosed)||force){
 				destroied=true;
 				connected=false;
-				uis.closeStream_Local();
+				uis.closeStreamLocal();
 				uos.closeStream_Local();
 				sender.destroy();
 				receiver.destroy();

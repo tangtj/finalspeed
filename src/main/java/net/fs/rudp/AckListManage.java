@@ -2,6 +2,8 @@
 
 package net.fs.rudp;
 
+import net.fs.utils.ThreadUtils;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AckListManage implements Runnable {
@@ -30,11 +32,7 @@ public class AckListManage implements Runnable {
 				taskTable.values().parallelStream().forEach(AckListTask::run);
 				taskTable.clear();
 			}
-			try {
-				Thread.sleep(RUDPConfig.ackListDelay);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			ThreadUtils.sleep(RUDPConfig.ackListDelay);
 		}
 	}
 }

@@ -6,7 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Random;
+import java.nio.charset.StandardCharsets;
 
 import net.fs.rudp.ClientProcessorInterface;
 import net.fs.rudp.ConnectionUDP;
@@ -21,17 +21,11 @@ import net.fs.utils.ThreadUtils;
 
 public class PortMapProcess implements ClientProcessorInterface{
 
-	Random ran=new Random();
+	private UDPInputStream  tis;
 
-	UDPInputStream  tis;
+	private UDPOutputStream tos;
 
-	UDPOutputStream tos;
-
-	String serverAddress="";
-
-	int serverPort;
-
-	ConnectionUDP conn;
+	private ConnectionUDP conn;
 
 	MapClient mapClient;
 
@@ -43,25 +37,23 @@ public class PortMapProcess implements ClientProcessorInterface{
 	boolean closed=false;
 	boolean success=false;
 
-	public PortMapProcess(MapClient mapClient,Route route,final Socket srcSocket,String serverAddress2,int serverPort2,String password_proxy_md5,
-			String dstAddress,final int dstPort){
+	public PortMapProcess(MapClient mapClient, Route route, final Socket srcSocket, String serverAddress2, int serverPort2,
+						  String dstAddress, final int dstPort){
 		this.mapClient=mapClient;
-		this.serverAddress=serverAddress2;
-		this.serverPort=serverPort2;
 
 		this.srcSocket=srcSocket;
 
 		try {
 			srcIs = new DataInputStream(srcSocket.getInputStream());
 			srcOs=new DataOutputStream(srcSocket.getOutputStream());
-			conn = route.getConnection(serverAddress, serverPort,null);
+			conn = route.getConnection(serverAddress2, serverPort2);
 			tis=conn.uis;
 			tos=conn.uos;
 
 			JSONObject requestJson=new JSONObject();
 			requestJson.put("dst_address", dstAddress);
 			requestJson.put("dst_port", dstPort);
-			byte[] requestData=requestJson.toJSONString().getBytes("utf-8");
+			byte[] requestData=requestJson.toJSONString().getBytes(StandardCharsets.UTF_8);
 			
 			tos.write(requestData, 0, requestData.length);
 
@@ -72,11 +64,11 @@ public class PortMapProcess implements ClientProcessorInterface{
 
 			byte[] responeData=tis.read2();
 
-			String hs=new String(responeData,"utf-8");
+			String hs=new String(responeData,   StandardCharsets.UTF_8);
 			JSONObject responeJSon=JSONObject.parseObject(hs);
 			int code=responeJSon.getIntValue("code");
 			String message=responeJSon.getString("message");
-			String uimessage="";
+			String uimessage;
 			if(code==Constant.code_success){
 
 				ThreadUtils.execute(() -> {
@@ -88,7 +80,7 @@ public class PortMapProcess implements ClientProcessorInterface{
 						e.printStackTrace();
 					}finally{
 						close();
-						if(p2.getReadedLength()==0){
+						if(p2.getReaderLength()==0){
 							//String msg="fs服务连接成功,加速端口"+dstPort+"连接失败1";
 							String msg="端口"+dstPort+"无返回数据";
 							MLog.println(msg);
@@ -145,10 +137,10 @@ public class PortMapProcess implements ClientProcessorInterface{
 				tos.closeStream_Local();
 			}
 			if(tis!=null){
-				tis.closeStream_Local();
+				tis.closeStreamLocal();
 			}
 			if(conn!=null){
-				conn.close_local();
+				conn.closeLocal();
 			}
 			if(srcSocket!=null){
 				try {

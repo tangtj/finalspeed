@@ -12,7 +12,6 @@ import net.fs.client.Pipe;
 import net.fs.rudp.ConnectionProcessor;
 import net.fs.rudp.ConnectionUDP;
 import net.fs.rudp.Constant;
-import net.fs.rudp.Route;
 import net.fs.rudp.UDPInputStream;
 import net.fs.rudp.UDPOutputStream;
 import net.fs.utils.MLog;
@@ -23,27 +22,27 @@ import net.fs.utils.ThreadUtils;
 
 public class MapTunnelProcessor implements ConnectionProcessor{
 
-	Socket dstSocket=null;
+	private Socket dstSocket=null;
 
-	boolean closed=false;
+	private boolean closed=false;
 
-	MapTunnelProcessor pc;
-
-	ConnectionUDP conn;
+	private ConnectionUDP conn;
 
 
-	UDPInputStream  tis;
+	private UDPInputStream  tis;
 
-	UDPOutputStream tos;
+	private UDPOutputStream tos;
 
-	InputStream sis;
+	private InputStream sis;
 
-	OutputStream sos;
+	private OutputStream sos;
 
+	private final static String LOCAL_HOST = "127.0.0.1";
+
+	@Override
 	public void process(final ConnectionUDP conn){
 		this.conn=conn;
-		pc=this;
-		ThreadUtils.execute(() -> process());
+		ThreadUtils.execute(this::process);
 	}
 
 
@@ -56,21 +55,21 @@ public class MapTunnelProcessor implements ConnectionProcessor{
 		try {
 			headData = tis.read2();
 			String hs=new String(headData, StandardCharsets.UTF_8);
-			JSONObject requestJSon=JSONObject.parseObject(hs);
-			final int dstPort=requestJSon.getIntValue("dst_port");
+			JSONObject requestJson=JSONObject.parseObject(hs);
+			final int dstPort=requestJson.getIntValue("dst_port");
 			String message="";
-			JSONObject responeJSon=new JSONObject();
-			int code=Constant.code_failed;			
-			code=Constant.code_success;
-			responeJSon.put("code", code);
-			responeJSon.put("message", message);
-			byte[] responeData=responeJSon.toJSONString().getBytes(StandardCharsets.UTF_8);
+			JSONObject responseJson=new JSONObject();
+			int code =Constant.code_success;
+			responseJson.put("code", code);
+			responseJson.put("message", message);
+			byte[] responeData=responseJson.toJSONString().getBytes(StandardCharsets.UTF_8);
 			tos.write(responeData, 0, responeData.length);
 			if(code!=Constant.code_success){
 				close();
 				return;
 			}
-			dstSocket = new Socket("127.0.0.1", dstPort);
+
+			dstSocket = new Socket(LOCAL_HOST, dstPort);
 			dstSocket.setTcpNoDelay(true);
 			sis=dstSocket.getInputStream();
 			sos=dstSocket.getOutputStream();
@@ -85,7 +84,7 @@ public class MapTunnelProcessor implements ConnectionProcessor{
 					//e.printStackTrace();
 				}finally{
 					close();
-					if(p1.getReadedLength()==0){
+					if(p1.getReaderLength()==0){
 						MLog.println("端口"+dstPort+"无返回数据");
 					}
 				}
@@ -131,10 +130,10 @@ public class MapTunnelProcessor implements ConnectionProcessor{
 				tos.closeStream_Local();
 			}
 			if(tis!=null){
-				tis.closeStream_Local();
+				tis.closeStreamLocal();
 			}
 			if(conn!=null){
-				conn.close_local();
+				conn.closeLocal();
 			}
 			if(dstSocket!=null){
 				try {

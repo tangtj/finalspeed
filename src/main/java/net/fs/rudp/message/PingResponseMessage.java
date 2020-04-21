@@ -9,15 +9,15 @@ import net.fs.utils.ByteShortConvert;
 
 
 
-public class PingMessage2 extends Message{
+public class PingResponseMessage extends Message{
 	
-	public short sType=net.fs.rudp.message.MessageType.sType_PingMessage2;
+	public short sType=net.fs.rudp.message.MessageType.sType_PingResponseMessage;
 	
 	byte[] dpData=new byte[16];
 	
 	int pingId;
 	
-	public PingMessage2(int connectId,int clientId,int pingId){
+	public PingResponseMessage(int connectId, int clientId, int pingId){
 		ByteShortConvert.toByteArray(ver, dpData, 0);  //add: ver
 		ByteShortConvert.toByteArray(sType, dpData, 2);  //add: service type
 		ByteIntConvert.toByteArray(connectId, dpData, 4); //add: sequence
@@ -26,7 +26,7 @@ public class PingMessage2 extends Message{
 		dp=new DatagramPacket(dpData,dpData.length);
 	}
 	
-	public PingMessage2(DatagramPacket dp){
+	public PingResponseMessage(DatagramPacket dp){
 		this.dp=dp;
 		dpData=dp.getData();
 		ver=ByteShortConvert.toShort(dpData, 0);
