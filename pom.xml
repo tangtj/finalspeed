@@ -63,7 +63,7 @@
                             <mainClass>${profiles.mainClass}</mainClass>
                         </manifest>
                     </archive>
-                    <finalName>target</finalName>
+                    <finalName>fs-${version}-full</finalName>
                 </configuration>
                 <executions>
                     <execution>
