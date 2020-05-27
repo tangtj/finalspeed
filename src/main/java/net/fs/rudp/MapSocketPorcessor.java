@@ -148,25 +148,23 @@ public class MapSocketPorcessor implements PipeListener{
 	}
 
 	public void start(){
-		Runnable t=new Runnable(){
-			public void run(){
-				try {
-					ConnInfo connInfo=new ConnInfo();
-					StreamPipe p1=new StreamPipe(connInfo,srcIs,dstOs,10*1024,1000*1024);
-					StreamPipe p2=new StreamPipe(connInfo,dstIs,srcOs,10*1024,1000*1024);
-					p1.setType(StreamPipe.type_request);
-					//p1.addListener(mp);
-					//p2.addListener(mp);
-					p1.setSocketA(socketA);
-					p1.setSocketB(socketB);
-					p2.setType(StreamPipe.type_respone);
-					p2.setSocketA(socketA);
-					p2.setSocketB(socketB);
-					p1.setSupserSocketId(supserSocketId);
-					p2.setSupserSocketId(supserSocketId);
-				} catch (Exception e1) {
-					e1.printStackTrace();
-				}
+		Runnable t= () -> {
+			try {
+				ConnInfo connInfo=new ConnInfo();
+				StreamPipe p1=new StreamPipe(connInfo,srcIs,dstOs,10*1024,1000*1024);
+				StreamPipe p2=new StreamPipe(connInfo,dstIs,srcOs,10*1024,1000*1024);
+				p1.setType(StreamPipe.type_request);
+				//p1.addListener(mp);
+				//p2.addListener(mp);
+				p1.setSocketA(socketA);
+				p1.setSocketB(socketB);
+				p2.setType(StreamPipe.type_respone);
+				p2.setSocketA(socketA);
+				p2.setSocketB(socketB);
+				p1.setSupserSocketId(supserSocketId);
+				p2.setSupserSocketId(supserSocketId);
+			} catch (Exception e1) {
+				e1.printStackTrace();
 			}
 		};
 		es.execute(t);

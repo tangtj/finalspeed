@@ -92,9 +92,7 @@ public class ClientControl {
     }
 
     public void onReceiverHeartPacket(DatagramPacket dp) {
-        byte[] dpData = dp.getData();
         int sType = MessageCheck.checkSType(dp);
-        int remote_clientId = ByteIntConvert.toInt(dpData, 8);
         if (sType == net.fs.rudp.message.MessageType.sType_PingMessage) {
             PingMessage pm = new PingMessage(dp);
             sendPingResponseMessage(pm.getPingId(), dp.getAddress(), dp.getPort());

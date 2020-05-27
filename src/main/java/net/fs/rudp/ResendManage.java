@@ -4,20 +4,19 @@ package net.fs.rudp;
 
 import net.fs.utils.ThreadUtils;
 
-import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 
 
 public class ResendManage implements Runnable{
 	
-	boolean haveTask=false;
-	Object signalOb=new Object();
-	Thread mainThread;
-	long vTime=0;
-	long lastReSendTime;
+//	boolean haveTask=false;
+//	Object signalOb=new Object();
+//	Thread mainThread;
+//	long vTime=0;
+//	long lastReSendTime;
 	
-	LinkedBlockingQueue<ResendItem> taskList= new LinkedBlockingQueue<>();
+	private final LinkedBlockingQueue<ResendItem> taskList= new LinkedBlockingQueue<>();
 	
 	public ResendManage(){
 		ThreadUtils.execute(this);
