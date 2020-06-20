@@ -81,7 +81,7 @@ public class VDatagramSocket extends DatagramSocket{
 				}else {
 					tunConnecting=true;
 					try {
-						capEnv.createTcpTun_Client(dstAddress.getHostAddress(), dstPort);
+						capEnv.createTcpTun_Client(dstAddress.getAddress(), dstPort);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}

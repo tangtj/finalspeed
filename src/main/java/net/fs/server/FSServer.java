@@ -24,6 +24,8 @@ public class FSServer {
 
     private Route routeTcp;
 
+    private final String configPath = "./cnf/listen_port";
+
     private int defaultRoutePort = 150;
 
     static FSServer udpServer;
@@ -55,7 +57,7 @@ public class FSServer {
         MLog.info("System Name: " + systemType);
         final MapTunnelProcessor mp = new MapTunnelProcessor();
 
-        String ports = readFileData("./cnf/listen_port");
+        String ports = readFileData(configPath);
         if (ports != null && !"".equals(ports.trim())) {
             ports = ports.replaceAll("\n", "").replaceAll("\r", "");
             defaultRoutePort = Integer.parseInt(ports);

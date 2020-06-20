@@ -12,11 +12,11 @@ public class FireWallOperate {
 
     private boolean successFirewallWindows = true;
 
-    private SystemType systemType;
+    private final SystemType systemType;
 
-    private int routePort;
+    private final int routePort;
 
-    private String systemName;
+    private final String systemName;
 
     public FireWallOperate(int routePort, SystemType type, String systemName) {
         this.routePort = routePort;

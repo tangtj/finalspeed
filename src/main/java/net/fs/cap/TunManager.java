@@ -12,13 +12,9 @@ import java.util.concurrent.TimeUnit;
 
 public class TunManager {
 
-    ConcurrentHashMap<String, TCPTun> connTable = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, TCPTun> connTable = new ConcurrentHashMap<>();
 
-    static TunManager tunManager;
-
-    {
-        tunManager = this;
-    }
+    private final TunManager tunManager;
 
     TCPTun defaultTcpTun;
 
@@ -27,6 +23,7 @@ public class TunManager {
     CapEnv capEnv;
 
     TunManager(CapEnv capEnv) {
+        tunManager = this;
         this.capEnv = capEnv;
         TimerExecutor.submitTimerTask(this::scan, 1, TimeUnit.SECONDS);
     }
@@ -69,9 +66,9 @@ public class TunManager {
         return it;
     }
 
-    public static TunManager get() {
-        return tunManager;
-    }
+//    public static TunManager get() {
+//        return tunManager;
+//    }
 
     public TCPTun getTcpConnection_Client(String remoteAddress, short remotePort, short localPort) {
         return connTable.get(remoteAddress + ":" + remotePort + ":" + localPort);

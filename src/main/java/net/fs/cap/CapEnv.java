@@ -67,7 +67,7 @@ public class CapEnv {
 	
 	private final boolean fwSuccess;
 	
-	boolean ppp=false;
+	final boolean ppp=false;
 	
 	{
 		capEnv=this;
@@ -96,7 +96,11 @@ public class CapEnv {
 				ipV4Packet=(IpV4Packet) packetEth.getPayload();
 			}
 		}
-		if(ipV4Packet!=null){
+
+		//数据包有问题的话直接退出
+		if (ipV4Packet == null){
+			return;
+		}
 			IpV4Header ipV4Header=ipV4Packet.getHeader();
 			if(ipV4Packet.getPayload() instanceof TcpPacket){
 				TcpPacket tcpPacket=(TcpPacket) ipV4Packet.getPayload();
@@ -122,7 +126,6 @@ public class CapEnv {
 			}else if(packetEth.getPayload() instanceof IllegalPacket){
 				MLog.println("IllegalPacket!!!");
 			}
-		}
 	
 	}
 	
@@ -146,22 +149,19 @@ public class CapEnv {
 		localIpv4 = networkInfo.getLocalAddress();
 
 		PcapNetworkInterface nif = networkInfo.getNetworkInterface();
-
-		if(nif !=null){
-			String desString="";
-			if(nif.getDescription()!=null){
-				desString= nif.getDescription();
-			}
-			success=true;
-			MLog.info("Selected Network Interface:\n"+"  "+desString+"   "+ nif.getName());
-			if(fwSuccess){
-				tcpEnable=true;
-			}
-		}else {
-			tcpEnable=false;
+		if (nif == null){
+			tcpEnable = false;
 			MLog.info("Select Network Interface failed,can't use TCP protocal!\n");
+			return false;
 		}
-		if(tcpEnable){
+
+		String desString=nif.getDescription();
+		success=true;
+		MLog.info("Selected Network Interface:\n"+"  "+desString+"   "+ nif.getName());
+		if(fwSuccess){
+			tcpEnable=true;
+		}
+		if(tcpEnable && nif != null){
 			sendHandle = nif.openLive(SNAPLEN, getMode(nif), READ_TIMEOUT);
 //			final PcapHandle handle= nif.openLive(SNAPLEN, getMode(nif), READ_TIMEOUT);
 			
@@ -206,9 +206,9 @@ public class CapEnv {
 	
 	}
 	
-	IpV4Packet getIpV4Packet_pppoe(EthernetPacket packet_eth) throws IllegalRawDataException{
+	IpV4Packet getIpV4Packet_pppoe(EthernetPacket packetEth) throws IllegalRawDataException{
 		IpV4Packet ipV4Packet=null;
-		byte[] pppData=packet_eth.getPayload().getRawData();
+		byte[] pppData=packetEth.getPayload().getRawData();
 		if(pppData.length>8&&pppData[8]==0x45){
 			byte[] b2=new byte[2];
 			System.arraycopy(pppData, 4, b2, 0, 2);
@@ -231,22 +231,21 @@ public class CapEnv {
 	
 	
 	public static String printHexString(byte[] b) {
-		StringBuffer sb=new StringBuffer();
+		StringBuilder sb=new StringBuilder();
         for (int i = 0; i < b.length; i++)
         {
             String hex = Integer.toHexString(b[i] & 0xFF);
             hex=  hex.replaceAll(":", " ");
-            if (hex.length() == 1)
-            {
+            if (hex.length() == 1) {
                 hex = '0' + hex;
             }
-            sb.append(hex + " ");
+            sb.append(hex).append(" ");
         }
         return sb.toString();
     }
 	
-	public void createTcpTun_Client(String dstAddress,short dstPort) throws Exception{
-		Inet4Address serverAddress=(Inet4Address) Inet4Address.getByName(dstAddress);
+	public void createTcpTun_Client(byte[] dstAddress,short dstPort) throws Exception{
+		Inet4Address serverAddress=(Inet4Address) Inet4Address.getByAddress(dstAddress);
 		TCPTun conn=new TCPTun(this,serverAddress,dstPort, localMac, gatewayMac);
 		tcpManager.addConnection_Client(conn);
 		boolean success=false;
